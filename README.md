@@ -27,3 +27,10 @@ You should then be able to access the Multiplay SDK using a singleton interface:
 ```csharp
 await MultiplayService.Instance.ReadyServerForPlayersAsync();
 ```
+
+## Multiplay OneAction Authoring
+
+The Multiplay SDK provides authoring tools to simplify your experience 
+while developing Multiplay servers. 
+
+In order to access the authoring tools you must be using Unity 2021.3.0f1 or newer. 

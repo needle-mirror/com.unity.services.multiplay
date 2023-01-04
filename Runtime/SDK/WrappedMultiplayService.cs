@@ -54,8 +54,9 @@ namespace Unity.Services.Multiplay.Internal
             var serverId = ServerConfig.ServerId;
             var channel = m_MultiplayServiceSdk.WireDirect.CreateChannel($"ws://127.0.0.1:8086/v1/connection/websocket", new MultiplaySdkDaemonTokenProvider(serverId));
             channel.MessageReceived += (message) => OnMessageReceived(callbacks, message);
+            MultiplayServerEvents events = new MultiplayServerEvents(channel, callbacks);
             await channel.SubscribeAsync();
-            return new MultiplayServerEvents(channel, callbacks);
+            return events;
         }
 
         public async Task<string> GetPayloadAllocationAsPlainText()
