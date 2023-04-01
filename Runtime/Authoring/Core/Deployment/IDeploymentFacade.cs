@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +8,7 @@ using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 
 namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 {
-    interface IDeploymentFacade
+    public interface IDeploymentFacade
     {
         Task BuildBinaryAsync(BuildItem buildItem, CancellationToken cancellationToken = default);
         Task WarnBuildTargetChanged(CancellationToken cancellationToken = default);

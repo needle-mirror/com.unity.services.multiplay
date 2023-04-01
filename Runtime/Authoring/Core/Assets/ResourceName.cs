@@ -1,6 +1,6 @@
 namespace Unity.Services.Multiplay.Authoring.Core.Assets
 {
-    interface IResourceName
+    public interface IResourceName
     {
         string Name { get; init; }
     }

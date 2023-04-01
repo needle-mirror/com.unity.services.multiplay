@@ -8,16 +8,18 @@ using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Allocations.Http;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.BuildConfigs.Apis.BuildConfigurations;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Builds.Apis.Builds;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Fleets.Apis.Fleets;
+using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Logs.Apis.Logs;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Servers;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Servers.Apis.Servers;
 using Unity.Services.Multiplay.Authoring.Editor.Shared.Clients;
 using UnityEditor;
 
 using ICoreAccessTokens = Unity.Services.Core.Editor.IAccessTokens;
+using Task = UnityEditor.VersionControl.Task;
 
 namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 {
-    class MultiplayApiFactory : IFleetApiFactory, IBuildsApiFactory, IBuildConfigApiFactory, IAllocationApiFactory, IServersApiFactory
+    class MultiplayApiFactory : IFleetApiFactory, IBuildsApiFactory, IBuildConfigApiFactory, IAllocationApiFactory, IServersApiFactory, ILogsApiFactory
     {
         const string k_StgUrl = "https://staging.services.unity.com";
 
@@ -72,6 +74,14 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             return new ServersApi(config, new ServersApiClient(
                 new AdminApis.Servers.Http.HttpClient(),
                 new Configuration(basePath, null, null, headers)));
+        }
+
+        async Task<ILogsApi> ILogsApiFactory.Build()
+        {
+            var(config, basePath, headers) = await Authenticate();
+            return new LogsApi(config, new LogsApiClient(
+                new AdminApis.Logs.Http.HttpClient(),
+                new AdminApis.Logs.Configuration(basePath, null, null, headers)));
         }
 
         async Task<(ApiConfig, string, IDictionary<string, string>)> Authenticate()

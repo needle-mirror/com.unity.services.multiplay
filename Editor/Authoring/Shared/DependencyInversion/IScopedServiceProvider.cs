@@ -3,7 +3,7 @@ using System;
 
 namespace Unity.Services.Multiplay.Authoring.Editor.Shared.DependencyInversion
 {
-    interface IScopedServiceProvider : IServiceProvider, IDisposable
+    public interface IScopedServiceProvider : IServiceProvider, IDisposable
     {
         IScopedServiceProvider CreateScope();
     }
