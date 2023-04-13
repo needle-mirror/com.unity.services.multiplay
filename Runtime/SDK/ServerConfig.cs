@@ -23,14 +23,16 @@ namespace Unity.Services.Multiplay
         /// <param name="allocationId">The Allocation ID for the server.</param>
         /// <param name="queryPort">The Query Port.</param>
         /// <param name="port">The Game Session Port.</param>
+        /// <param name="ip">The Game Session IP Address.</param>
         /// <param name="serverLogDirectory">The Server Log Directory.</param>
         [Preserve]
-        public ServerConfig(long serverId, string allocationId, ushort queryPort, ushort port, string serverLogDirectory)
+        public ServerConfig(long serverId, string allocationId, ushort queryPort, ushort port, string ip, string serverLogDirectory)
         {
             ServerId = serverId;
             AllocationId = allocationId;
             QueryPort = queryPort;
             Port = port;
+            IpAddress = ip;
             ServerLogDirectory = serverLogDirectory;
         }
 
@@ -61,6 +63,13 @@ namespace Unity.Services.Multiplay
         [Preserve]
         [DataMember(Name = "port", IsRequired = true, EmitDefaultValue = false)]
         public ushort Port { get; }
+
+        /// <summary>
+        /// The connection ip for the session.
+        /// </summary>
+        [Preserve]
+        [DataMember(Name = "ip", IsRequired = true, EmitDefaultValue = false)]
+        public string IpAddress { get; }
 
         /// <summary>
         /// The directory logs will be written to.
