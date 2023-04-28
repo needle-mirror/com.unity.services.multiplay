@@ -1,9 +1,9 @@
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Unity.Services.Core;
 using Unity.Services.Core.Threading.Internal;
-using UnityEngine;
 
 namespace Unity.Services.Wire.Internal
 {
@@ -14,9 +14,7 @@ namespace Unity.Services.Wire.Internal
     class Subscription : IChannel
     {
         public event Action<string> MessageReceived;
-#pragma warning disable
         public event Action<byte[]> BinaryMessageReceived;
-#pragma warning restore
         public event Action KickReceived;
         public event Action<SubscriptionState> NewStateReceived;
         public event Action<TaskCompletionSource<bool>> UnsubscribeReceived;
@@ -32,13 +30,13 @@ namespace Unity.Services.Wire.Internal
         public SubscriptionState SubscriptionState = SubscriptionState.Unsynced;
 
         IChannelTokenProvider m_TokenProvider;
-        readonly IUnityThreadUtils m_ThreadUtils;
 
-        private bool m_Disposed;
+        bool m_Disposed;
 
-        public Subscription(IChannelTokenProvider tokenProvider, IUnityThreadUtils threadUtils)
+        string ChannelDisplay => string.IsNullOrEmpty(Channel) ? "unknown" : Channel;
+
+        public Subscription(IChannelTokenProvider tokenProvider)
         {
-            m_ThreadUtils = threadUtils;
             m_TokenProvider = tokenProvider;
             Offset = 0;
             m_Disposed = false;
@@ -84,41 +82,38 @@ namespace Unity.Services.Wire.Internal
         {
             if (reply.error != null && reply.error.code != 0)
             {
-                Logger.LogError(
-                    $"Received publication with error : code: {reply.error.code}, message: {reply.error.message}");
-            }
-
-            var publicationsLength = reply.result?.publications?.Length;
-            if (publicationsLength > 0)
-            {
-                m_ThreadUtils.PostAsync(() =>
-                {
-                    foreach (var publication in reply.result.publications)
-                    {
-                        try
-                        {
-                            Logger.LogVerbose("Invoking event with publication payload!");
-                            MessageReceived?.Invoke(publication.data.payload);
-                        }
-                        finally
-                        {
-                            Offset = publication.offset;
-                        }
-                    }
-                });
+                var errMsg = $"Received publication with error : code: {reply.error.code}, message: {reply.error.message}";
+                Logger.LogError(errMsg);
+                ErrorReceived?.Invoke(errMsg);
                 return;
             }
-            var payload = reply.result?.data?.data?.payload;
-            if (payload != null)
+
+            if (reply.result?.publications?.Length > 0)
             {
-                m_ThreadUtils.PostAsync(() =>
+                foreach (var publication in reply.result.publications)
                 {
-                    Logger.LogVerbose("Invoking event with reply result payload!");
-                    MessageReceived?.Invoke(reply.result.data.data.payload);
-                });
+                    try
+                    {
+                        MessageReceived?.Invoke(publication.data.payload);
+                        BinaryMessageReceived?.Invoke(Encoding.UTF8.GetBytes(publication.data.payload));
+                    }
+                    finally
+                    {
+                        Offset = publication.offset;
+                    }
+                }
+                return;
+            }
+
+            if (reply.result?.data?.data?.payload != null)
+            {
+                MessageReceived?.Invoke(reply.result.data.data.payload);
                 Offset++;
                 return;
             }
+
+            // For multiplay, we won't have the wire envelope (the payload field)
+            // we send directly what's inside the data field
             var jObject = JObject.Parse(reply.originalString);
             Logger.LogVerbose("MessageReceived, invoking event with reply result!");
             MessageReceived?.Invoke(jObject.SelectToken("result.data.data").ToString());
@@ -134,12 +129,9 @@ namespace Unity.Services.Wire.Internal
         {
             if (KickReceived != null)
             {
-                m_ThreadUtils.PostAsync(() =>
-                {
-                    SubscriptionState = SubscriptionState.Unsubscribed;
-                    NewStateReceived?.Invoke(SubscriptionState);
-                    KickReceived?.Invoke();
-                });
+                SubscriptionState = SubscriptionState.Unsubscribed;
+                NewStateReceived?.Invoke(SubscriptionState);
+                KickReceived?.Invoke();
             }
         }
 
@@ -151,7 +143,7 @@ namespace Unity.Services.Wire.Internal
 
         ~Subscription()
         {
-            Dispose(false);
+            // Do nothing
         }
 
         public void Dispose()
@@ -203,7 +195,11 @@ namespace Unity.Services.Wire.Internal
 
         public Task SubscribeAsync()
         {
-            Logger.LogVerbose($"Subscribing to {(String.IsNullOrEmpty(Channel) ? "unknown" : Channel)}");
+            if (m_Disposed)
+            {
+                throw new ObjectDisposedException(ChannelDisplay);
+            }
+            Logger.LogVerbose($"Subscribing to {ChannelDisplay}");
             SubscriptionState = SubscriptionState.Subscribing;
             NewStateReceived?.Invoke(SubscriptionState);
             var completionSource = new TaskCompletionSource<bool>();
@@ -213,7 +209,11 @@ namespace Unity.Services.Wire.Internal
 
         public Task UnsubscribeAsync()
         {
-            Logger.LogVerbose($"Unsubscribing from {(String.IsNullOrEmpty(Channel) ? "unknown" : Channel)}");
+            if (m_Disposed)
+            {
+                throw new ObjectDisposedException(ChannelDisplay);
+            }
+            Logger.LogVerbose($"Unsubscribing from {ChannelDisplay}");
             var completionSource = new TaskCompletionSource<bool>();
             UnsubscribeReceived?.Invoke(completionSource);
             return completionSource.Task;

@@ -11,7 +11,7 @@ namespace Unity.Services.Wire.Internal
 {
     class Client : IWire
     {
-        enum ConnectionState
+        internal enum ConnectionState
         {
             Disconnected,
             Connected,
@@ -23,23 +23,27 @@ namespace Unity.Services.Wire.Internal
 
         TaskCompletionSource<ConnectionState> m_ConnectionCompletionSource;
         TaskCompletionSource<ConnectionState> m_DisconnectionCompletionSource;
-        ConnectionState m_ConnectionState = ConnectionState.Disconnected;
+        internal ConnectionState m_ConnectionState = ConnectionState.Disconnected;
         CancellationTokenSource m_PingCancellationSource;
         Task<bool> m_PingTask;
         IWebSocket m_WebsocketClient;
 
-        readonly IBackoffStrategy m_Backoff;
+        internal IBackoffStrategy m_Backoff;
         readonly CommandManager m_CommandManager;
         readonly Configuration m_Config;
         readonly IMetrics m_Metrics;
         readonly IUnityThreadUtils m_ThreadUtils;
 
-        private bool m_WebsocketInitialized = false;
+        event Action m_OnConnected;
 
-        private bool m_DirectClient = false;
-        private string m_DirectSubscriptionChannel = null;
+        bool m_DirectClient = false;
+        string m_DirectSubscriptionChannel = null;
+        bool m_WebsocketInitialized = false;
 
-        public Client(Configuration config, Core.Scheduler.Internal.IActionScheduler actionScheduler, IMetrics metrics, IUnityThreadUtils threadUtils)
+        bool m_WantConnected = false;
+
+        public Client(Configuration config, Core.Scheduler.Internal.IActionScheduler actionScheduler, IMetrics metrics,
+                      IUnityThreadUtils threadUtils)
         {
             m_ThreadUtils = threadUtils;
             m_Config = config;
@@ -47,15 +51,8 @@ namespace Unity.Services.Wire.Internal
             SubscriptionRepository = new ConcurrentDictSubscriptionRepository();
             SubscriptionRepository.SubscriptionCountChanged += (int subscriptionCount) =>
             {
-                if (m_Metrics != null)
-                {
-                    m_Metrics.SendGaugeMetric("subscription_count", subscriptionCount);
-                }
+                m_Metrics?.SendGaugeMetric("subscription_count", subscriptionCount);
                 Logger.LogVerbose($"Subscription count changed: {subscriptionCount}");
-                if (subscriptionCount == 0)
-                {
-                    Disconnect();
-                }
             };
             m_Backoff = new ExponentialBackoffStrategy();
             m_CommandManager = new CommandManager(config, actionScheduler);
@@ -70,16 +67,25 @@ namespace Unity.Services.Wire.Internal
         }
 
 #if UNITY_EDITOR
-        void PlayModeStateChanged(PlayModeStateChange state)
+        async void PlayModeStateChanged(PlayModeStateChange state)
         {
-            if (state != PlayModeStateChange.ExitingPlayMode)
+            try
             {
-                return;
-            }
+                if (state != PlayModeStateChange.ExitingPlayMode)
+                {
+                    return;
+                }
+                Logger.Log("Exiting playmode, disconnecting, and cleaning subscription repo.");
+                await DisconnectAsync();
 
-            foreach (var sub in SubscriptionRepository.GetAll())
+                foreach (var sub in SubscriptionRepository.GetAll())
+                {
+                    sub.Value.Dispose();
+                }
+            }
+            catch (Exception e)
             {
-                sub.Value.Dispose();
+                Logger.LogException(e);
             }
         }
 
@@ -98,19 +104,13 @@ namespace Unity.Services.Wire.Internal
             {
                 var reply = await m_CommandManager.WaitForCommandAsync(id);
                 tags.Add("result", "success");
-                if (m_Metrics != null)
-                {
-                    m_Metrics.SendHistogramMetric("command", (DateTime.Now - time).TotalMilliseconds, tags);
-                }
+                m_Metrics?.SendHistogramMetric("command", (DateTime.Now - time).TotalMilliseconds, tags);
                 return reply;
             }
             catch (Exception)
             {
                 tags.Add("result", "failure");
-                if (m_Metrics != null)
-                {
-                    m_Metrics.SendHistogramMetric("command", (DateTime.Now - time).TotalMilliseconds, tags);
-                }
+                m_Metrics?.SendHistogramMetric("command", (DateTime.Now - time).TotalMilliseconds, tags);
                 throw;
             }
         }
@@ -126,7 +126,7 @@ namespace Unity.Services.Wire.Internal
         {
             if (m_PingCancellationSource != null)
             {
-                throw new Exception("ping cancellation already exists");
+                throw new WireUnexpectedException("ping cancellation already exists");
             }
 
             m_PingCancellationSource = new CancellationTokenSource();
@@ -135,7 +135,7 @@ namespace Unity.Services.Wire.Internal
                 Command<PingRequest> command = new Command<PingRequest>(Message.Method.PING, new PingRequest());
                 try
                 {
-                    var res = await SendCommandAsync(command.id, command);
+                    await SendCommandAsync(command.id, command);
                 }
                 catch (CommandInterruptedException)
                 {
@@ -175,21 +175,41 @@ namespace Unity.Services.Wire.Internal
             m_PingCancellationSource = null;
         }
 
-        internal void Disconnect()
+        internal async Task DisconnectAsync()
         {
-            if (m_WebsocketClient != null)
+            if (m_DisconnectionCompletionSource != null)
             {
-                ChangeConnectionState(ConnectionState.Disconnecting);
-                m_WebsocketClient.Close();
+                await m_DisconnectionCompletionSource.Task;
+                return;
             }
-            else
+
+            m_WantConnected = false;
+            if (m_WebsocketClient == null)
             {
                 ChangeConnectionState(ConnectionState.Disconnected);
+                return;
+            }
+
+            m_DisconnectionCompletionSource = new TaskCompletionSource<ConnectionState>();
+            ChangeConnectionState(ConnectionState.Disconnecting);
+            m_WebsocketClient.Close();
+            await m_DisconnectionCompletionSource.Task;
+        }
+
+        internal async Task ResetAsync(bool reconnect)
+        {
+            await DisconnectAsync();
+            m_CommandManager.Clear();
+            SubscriptionRepository.Clear();
+            if (reconnect)
+            {
+                await ConnectAsync();
             }
         }
 
         public async Task ConnectAsync()
         {
+            m_WantConnected = true;
             Logger.LogVerbose("Connection initiated. Checking state prior to connection.");
             while (m_ConnectionState == ConnectionState.Disconnecting)
             {
@@ -210,15 +230,10 @@ namespace Unity.Services.Wire.Internal
                 return;
             }
 
-            Logger.LogVerbose("Proceeding to connection.");
-
             ChangeConnectionState(ConnectionState.Connecting);
 
             // initialize websocket object
-            if (!m_WebsocketInitialized)
-            {
-                InitWebsocket();
-            }
+            InitWebsocket();
 
             // Connect to the websocket server
             Logger.Log($"Attempting connection on: {m_Config.address}");
@@ -226,150 +241,161 @@ namespace Unity.Services.Wire.Internal
             await m_ConnectionCompletionSource.Task;
         }
 
-        private void InitWebsocket()
+        void InitWebsocket()
         {
             Logger.LogVerbose("Initializing Websocket.");
+            if (m_WebsocketInitialized)
+            {
+                return;
+            }
             m_WebsocketInitialized = true;
+
             // use the eventual websocket override instead of the default one
-            if (m_Config.WebSocket != null)
-            {
-                m_WebsocketClient = m_Config.WebSocket;
-            }
-            else
-            {
-                m_WebsocketClient = WebSocketFactory.CreateInstance(m_Config.address);
-            }
+            m_WebsocketClient = m_Config.WebSocket ?? WebSocketFactory.CreateInstance(m_Config.address);
 
             //  Add OnOpen event listener
-            m_WebsocketClient.OnOpen += async() =>
+            m_WebsocketClient.OnOpen += () => m_ThreadUtils.PostAsync(OnWebsocketOpen);
+
+            // Add OnMessage event listener
+            m_WebsocketClient.OnMessage += data => m_ThreadUtils.PostAsync(() => OnWebsocketMessage(data));
+
+            // Add OnError event listener
+            m_WebsocketClient.OnError += errMsg => m_ThreadUtils.PostAsync(() => OnWebsocketError(errMsg));
+
+            // Add OnClose event listener
+            m_WebsocketClient.OnClose += code => m_ThreadUtils.PostAsync(() => OnWebsocketClose(code));
+        }
+
+        internal async void OnWebsocketOpen()
+        {
+            try
             {
                 Logger.Log($"Websocket connected to : {m_Config.address}. Initiating Wire handshake.");
                 var subscriptionRequests = await SubscribeRequest.getRequestFromRepo(SubscriptionRepository);
+
                 var request = new ConnectRequest(m_Config?.token?.AccessToken ?? string.Empty, subscriptionRequests);
                 var command = new Command<ConnectRequest>(Message.Method.CONNECT, request);
-                Reply reply;
                 try
                 {
-                    reply = await SendCommandAsync(command.id, command);
+                    var reply = await SendCommandAsync(command.id, command);
+                    m_Backoff.Reset();
+                    SubscriptionRepository.RecoverSubscriptions(reply);
+                    ChangeConnectionState(ConnectionState.Connected);
                 }
                 catch (CommandInterruptedException exception)
                 {
                     // Wire handshake failed
-                    m_ConnectionCompletionSource.SetException(
-                        new ConnectionFailedException($"Socket closed during connection attempt: {exception.m_Code}"));
+                    m_ConnectionCompletionSource.TrySetException(
+                        new ConnectionFailedException(
+                            $"Socket closed during connection attempt: {exception.m_Code}"));
                     m_WebsocketClient.Close();
-                    return;
                 }
                 catch (Exception exception)
                 {
                     // Unknown exception caught during connection
-                    m_ConnectionCompletionSource.SetException(exception);
+                    m_ConnectionCompletionSource.TrySetException(exception);
                     m_WebsocketClient.Close();
-                    return;
                 }
-
-                m_Backoff.Reset();
-                try
-                {
-                    SubscriptionRepository.RecoverSubscriptions(reply);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogException(ex);
-                }
-                ChangeConnectionState(ConnectionState.Connected);
-            };
-
-            // Add OnMessage event listener
-            m_WebsocketClient.OnMessage += (byte[] payload) =>
+            }
+            catch (Exception e)
             {
-                try
-                {
-                    if (m_Metrics != null)
-                    {
-                        m_Metrics.SendSumMetric("message_received", 1);
-                    }
-                    Logger.LogVerbose("WS received message: " + Encoding.UTF8.GetString(payload));
-                    var messages = BatchMessages
-                        .SplitMessages(payload); // messages can be batched so we need to split them..
-                    foreach (var message in messages)
-                    {
-                        var reply = Reply.FromJson(message);
+                Logger.LogException(e);
+            }
+        }
 
-                        if (reply.id > 0)
-                        {
-                            HandleCommandReply(reply);
-                        }
-                        else if (reply.result?.type > 0)
-                        {
-                            HandlePushMessage(reply);
-                        }
-                        else
-                        {
-                            HandlePublications(reply);
-                        }
+        internal void OnWebsocketMessage(byte[] payload)
+        {
+            try
+            {
+                m_Metrics?.SendSumMetric("message_received", 1);
+                Logger.LogVerbose("WS received message: " + Encoding.UTF8.GetString(payload));
+                var messages = BatchMessages
+                    .SplitMessages(payload); // messages can be batched so we need to split them..
+                foreach (var message in messages)
+                {
+                    var reply = Reply.FromJson(message);
+
+                    if (reply.id > 0)
+                    {
+                        HandleCommandReply(reply);
+                    }
+                    else if (reply.result?.type > 0)
+                    {
+                        HandlePushMessage(reply);
+                    }
+                    else
+                    {
+                        HandlePublications(reply);
                     }
                 }
-                catch (Exception e)
-                {
-                    Logger.LogException(e);
-                    // TODO: try and find a way of reporting this exception
-                }
-            };
-
-            // Add OnError event listener
-            m_WebsocketClient.OnError += (string errMsg) =>
+            }
+            catch (Exception e)
             {
-                m_Metrics.SendSumMetric("websocket_error", 1);
-                Logger.LogError("Websocket connection error: " + errMsg);
-                // TODO: try and find a way of reporting this error
-            };
+                Logger.LogException(e);
+            }
+        }
 
-            // Add OnClose event listener
-            m_WebsocketClient.OnClose += async(WebSocketCloseCode originalcode) =>
+        void OnWebsocketError(string msg)
+        {
+            m_Metrics?.SendSumMetric("websocket_error");
+            Logger.LogError($"Websocket connection error: {msg}");
+        }
+
+        internal async void OnWebsocketClose(WebSocketCloseCode originalCode)
+        {
+            try
             {
-                var code = (CentrifugeCloseCode)originalcode;
+                var code = (CentrifugeCloseCode)originalCode;
                 Logger.Log("Websocket closed with code: " + code);
                 ChangeConnectionState(ConnectionState.Disconnected);
-                m_CommandManager.OnDisconnect(new CommandInterruptedException($"websocket disconnected: {code}", code));
+                m_CommandManager.OnDisconnect(new CommandInterruptedException($"websocket disconnected: {code}",
+                    code));
                 if (m_DisconnectionCompletionSource != null)
                 {
                     m_DisconnectionCompletionSource.SetResult(ConnectionState.Disconnected);
                     m_DisconnectionCompletionSource = null;
                 }
 
-                if (ShouldReconnect(code))
+                if (m_WantConnected && ShouldReconnect(code))
                 {
-                    var secondsUntilNextAttempt = m_Backoff.GetNext();
+                    // TokenVerificationFailed is a special Wire custom error that happens when the token verification failed on server side
+                    // to prevent any rate limitation on UAS the server will wait a specified amount of time before retrying therefore it's useless
+                    // to try again too early from the client.
+                    var secondsUntilNextAttempt = (int)originalCode == 4333 ? 10.0f : m_Backoff.GetNext(); // TODO: get rid of the cast when the close code gets public
                     Logger.LogVerbose($"Retrying websocket connection in : {secondsUntilNextAttempt} s");
                     await Task.Delay(TimeSpan.FromSeconds(secondsUntilNextAttempt));
-                    await m_ThreadUtils.PostAsync(async() => { await ConnectAsync(); });
+                    await ConnectAsync();
                 }
-            };
+            }
+            catch (Exception e)
+            {
+                Logger.LogException(e);
+            }
         }
 
         private bool ShouldReconnect(CentrifugeCloseCode code)
         {
             switch (code)
             {
-                case CentrifugeCloseCode.WebsocketNotSet:
-                case CentrifugeCloseCode.WebsocketNormal:
-                case CentrifugeCloseCode.WebsocketAway:
+                // irrecoverable error codes
                 case CentrifugeCloseCode.WebsocketUnsupportedData:
                 case CentrifugeCloseCode.WebsocketMandatoryExtension:
-                case CentrifugeCloseCode.Normal:
                 case CentrifugeCloseCode.InvalidToken:
                 case CentrifugeCloseCode.ForceNoReconnect:
                     return false;
+                case CentrifugeCloseCode.WebsocketNotSet:
+                case CentrifugeCloseCode.WebsocketNormal:
+                case CentrifugeCloseCode.WebsocketAway:
                 case CentrifugeCloseCode.WebsocketProtocolError:
-                case CentrifugeCloseCode.WebsocketAbnormal:
                 case CentrifugeCloseCode.WebsocketUndefined:
                 case CentrifugeCloseCode.WebsocketNoStatus:
+                case CentrifugeCloseCode.WebsocketAbnormal:
                 case CentrifugeCloseCode.WebsocketInvalidData:
                 case CentrifugeCloseCode.WebsocketPolicyViolation:
                 case CentrifugeCloseCode.WebsocketTooBig:
                 case CentrifugeCloseCode.WebsocketServerError:
                 case CentrifugeCloseCode.WebsocketTlsHandshakeFailure:
+                case CentrifugeCloseCode.Normal:
                 case CentrifugeCloseCode.Shutdown:
                 case CentrifugeCloseCode.BadRequest:
                 case CentrifugeCloseCode.InternalServerError:
@@ -382,6 +408,7 @@ namespace Unity.Services.Wire.Internal
                 case CentrifugeCloseCode.ForceReconnect:
                 case CentrifugeCloseCode.ConnectionLimit:
                 case CentrifugeCloseCode.ChannelLimit:
+                // case CentrifugeCloseCode.TokenVerificationFailed:
                 default:
                     return true;
             }
@@ -390,11 +417,9 @@ namespace Unity.Services.Wire.Internal
         void ChangeConnectionState(ConnectionState state)
         {
             var tags = new Dictionary<string, string> {{"state", state.ToString()}, };
-            if (m_Metrics != null)
-            {
-                m_Metrics.SendSumMetric("connection_state_change", 1, tags);
-            }
+            m_Metrics?.SendSumMetric("connection_state_change", 1, tags);
             m_ConnectionState = state;
+
             switch (state)
             {
                 case ConnectionState.Disconnected:
@@ -413,26 +438,22 @@ namespace Unity.Services.Wire.Internal
                     else
                     {
                         // TODO: report something wrong
+                        throw new WireUnexpectedException("Wire connected but encountered a prior non-null, not completed ping operation.");
                     }
-
+                    m_OnConnected?.Invoke();
+                    m_OnConnected = null;
                     break;
                 case ConnectionState.Connecting:
                     Logger.LogVerbose("Wire connecting...");
-                    if (m_ConnectionCompletionSource == null)
-                    {
-                        m_ConnectionCompletionSource = new TaskCompletionSource<ConnectionState>();
-                    }
+                    m_ConnectionCompletionSource = new TaskCompletionSource<ConnectionState>();
 
                     break;
                 case ConnectionState.Disconnecting:
                     Logger.LogVerbose("Wire is disconnecting");
-                    if (m_DisconnectionCompletionSource == null)
-                    {
-                        m_DisconnectionCompletionSource = new TaskCompletionSource<ConnectionState>();
-                    }
 
                     break;
                 default:
+                    Logger.LogError("ConnectionState default case label!");
                     throw new NotImplementedException();
             }
         }
@@ -459,11 +480,8 @@ namespace Unity.Services.Wire.Internal
         // Handle push actions emitted from the server
         void HandlePushMessage(Reply reply)
         {
-            var tags = new Dictionary<string, string> { { "push_type", reply.result.type.ToString() } };
-            if (m_Metrics != null)
-            {
-                m_Metrics.SendSumMetric("push_received", 1, tags);
-            }
+            var tags = new Dictionary<string, string> {{"push_type", reply.result.type.ToString()}};
+            m_Metrics?.SendSumMetric("push_received", 1, tags);
             var subscription = GetSubscriptionForReply(reply);
             if (subscription == null)
             {
@@ -491,7 +509,7 @@ namespace Unity.Services.Wire.Internal
             }
         }
 
-        private Subscription GetSubscriptionForReply(Reply reply)
+        Subscription GetSubscriptionForReply(Reply reply)
         {
             var channel = reply.result.channel;
             var subscription = SubscriptionRepository.GetSub(reply.result.channel);
@@ -534,7 +552,24 @@ namespace Unity.Services.Wire.Internal
 
         async Task SubscribeAsync(Subscription subscription)
         {
-            await ConnectAsync();
+            if (m_ConnectionState != ConnectionState.Connected)
+            {
+                var tcs = new TaskCompletionSource<bool>();
+                m_OnConnected += () =>
+                {
+                    tcs.SetResult(true);
+                };
+                try
+                {
+                    await ConnectAsync();
+                }
+                catch (Exception e)
+                {
+                    Logger.Log("Could not subscribe, issue while trying to connect. Subscription will resume when a connection is made.");
+                    Logger.LogException(e);
+                }
+                await tcs.Task;
+            }
             try
             {
                 var token = await subscription.RetrieveTokenAsync();
@@ -569,21 +604,13 @@ namespace Unity.Services.Wire.Internal
             catch (Exception exception)
             {
                 subscription.OnError($"Subscription failed: {exception.Message}");
-                // we caught an error while subscribing but connected for that one subscription
-                // in this specific case, we need to disconnect
-
-                if (SubscriptionRepository.IsEmpty)
-                {
-                    Disconnect();
-                }
-
                 throw;
             }
         }
 
         public IChannel CreateChannel(IChannelTokenProvider tokenProvider)
         {
-            var subscription = new Subscription(tokenProvider, m_ThreadUtils);
+            var subscription = new Subscription(tokenProvider);
             subscription.UnsubscribeReceived += async(TaskCompletionSource<bool> completionSource) =>
             {
                 try

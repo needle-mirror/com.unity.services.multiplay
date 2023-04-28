@@ -113,4 +113,14 @@ namespace Unity.Services.Wire.Internal
         /// <inheritdoc cref="ConnectionFailedException"/>
         public ConnectionFailedException(string reason) : base((int)WireErrorCode.ConnectionFailed, $"Connection failed: {reason}.") {}
     }
+
+    /// <summary>
+    /// An unexpected error occured during the operation of the Wire SDK.
+    /// </summary>
+    public class WireUnexpectedException : Exception
+    {
+        /// <inheritdoc cref="WireUnexpectedException"/>
+        internal WireUnexpectedException(string reason)
+            : base($"Wire encountered an unexpected exception: {reason}") {}
+    }
 }

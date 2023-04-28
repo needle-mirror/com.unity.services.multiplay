@@ -5,5 +5,4 @@ using UnityEngine.Scripting;
 // prevent Il2CPP code stripping
 [assembly: AlwaysLinkAssembly]
 
-[assembly: InternalsVisibleTo("Unity.Services.Wire.Tests")]
-[assembly: InternalsVisibleTo("Unity.Services.Wire.EditorTests")]
+[assembly: InternalsVisibleTo("Unity.Services.WireDirect.Tests")]

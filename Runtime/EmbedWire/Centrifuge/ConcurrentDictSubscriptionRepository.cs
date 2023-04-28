@@ -22,13 +22,16 @@ namespace Unity.Services.Wire.Internal
         bool IsEmpty { get; }
         bool ServerHasSubscription(Subscription subscription);
         void PromoteSubscriptionHandle(Subscription subscription);
+        void Clear();
     }
 
     class ConcurrentDictSubscriptionRepository : ISubscriptionRepository
     {
+        // subscriptions initiated by the client
         public ConcurrentDictionary<string, Subscription> Subscriptions;
 
-        private ConcurrentDictionary<string, SubscriptionHandle> SubscriptionHandles;
+        // subscriptions initiated by the server, not yet managed by the client
+        ConcurrentDictionary<string, SubscriptionHandle> SubscriptionHandles;
 
         public bool IsEmpty => Subscriptions.IsEmpty;
 
@@ -38,6 +41,12 @@ namespace Unity.Services.Wire.Internal
         {
             Subscriptions = new ConcurrentDictionary<string, Subscription>();
             SubscriptionHandles = new ConcurrentDictionary<string, SubscriptionHandle>();
+        }
+
+        public void Clear()
+        {
+            Subscriptions.Clear();
+            SubscriptionHandles.Clear();
         }
 
         public bool IsAlreadySubscribed(string alias)
@@ -56,17 +65,11 @@ namespace Unity.Services.Wire.Internal
             {
                 return false;
             }
-            return Subscriptions.ContainsKey(sub.Channel) && sub.IsConnected == false;
+            return Subscriptions.ContainsKey(sub.Channel) && !sub.IsConnected;
         }
 
         public void OnSubscriptionComplete(Subscription sub, Reply res)
         {
-            if (sub == null)
-            {
-                Logger.LogError("Subscription is null!");
-                return;
-            }
-
             if (res.HasError())
             {
                 Logger.LogError($"An error occured during subscription to {sub.Channel}: {res.error.message}");
@@ -148,7 +151,7 @@ namespace Unity.Services.Wire.Internal
             AddSub(subscription);
         }
 
-        private void AddSub(Subscription sub)
+        void AddSub(Subscription sub)
         {
             if (Subscriptions.TryAdd(sub.Channel, sub))
             {
@@ -156,7 +159,8 @@ namespace Unity.Services.Wire.Internal
             }
         }
 
-        private void AddSubscriptionHandle(SubscriptionHandle subscriptionHandle)
+        // called when the servers initiates a subscription
+        void AddSubscriptionHandle(SubscriptionHandle subscriptionHandle)
         {
             SubscriptionHandles.TryAdd(subscriptionHandle.ChannelName, subscriptionHandle);
         }
@@ -174,22 +178,22 @@ namespace Unity.Services.Wire.Internal
             var res = reply.result.ToConnectionResult();
             if (res.subs?.Count > 0)
             {
-                foreach (var replySubscription in res.subs)
+                foreach (var subIterator in res.subs)
                 {
-                    var sub = GetSub(replySubscription.Key);
+                    var sub = GetSub(subIterator.Key);
                     if (sub == null)
                     {
                         // The subscription exists on the server but not on our client, so we need to create it
-                        var newSub = new SubscriptionHandle(replySubscription.Key);
+                        var newSub = new SubscriptionHandle(subIterator.Key);
                         AddSubscriptionHandle(newSub);
                     }
                     else
                     {
                         var subreply = new Reply(0, null, new Result()
                         {
-                            channel = replySubscription.Key,
-                            publications = replySubscription.Value.publications,
-                            offset = replySubscription.Value.offset
+                            channel = subIterator.Key,
+                            publications = subIterator.Value.publications,
+                            offset = subIterator.Value.offset
                         });
                         OnSubscriptionComplete(sub, subreply);
                     }
