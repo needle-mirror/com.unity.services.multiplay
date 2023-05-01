@@ -6,3 +6,9 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("InternalsVisible.DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 #endif
+
+// Needed to enable record types
+namespace System.Runtime.CompilerServices
+{
+    static class IsExternalInit {}
+}

@@ -277,9 +277,9 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                                 configuration,
                                 await m_Deployment.FindBuildConfigAsync(configuration, token));
                         }
-
-                        ids = fleet.Definition.BuildConfigurations.Select(c => buildConfigIds[c]).ToList();
                     }
+
+                    ids = fleet.Definition.BuildConfigurations.Select(c => buildConfigIds[c]).ToList();
 
                     await m_Deployment.DeployFleetAsync(
                         fleet.OriginalName,

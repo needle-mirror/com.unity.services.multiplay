@@ -79,6 +79,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor
             collection.Register(Default<ILogsApi, LogsApi>);
             collection.Register(Default<IAllocationApi, AllocationApi>);
             collection.Register(Default<IBuildsApi, BuildsApi>);
+            collection.Register(Default<IServersApi, ServersApi>);
             collection.Register(Default<IBuildConfigApi, BuildConfigApi>);
             collection.Register(Default<IMultiplayDeployer, MultiplayDeployer>);
             collection.Register(Default<IApiAuthenticator, ApiAuthenticator>);
