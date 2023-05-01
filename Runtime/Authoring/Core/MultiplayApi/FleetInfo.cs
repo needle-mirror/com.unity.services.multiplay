@@ -15,7 +15,8 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
             Guid osId,
             string osName,
             List<FleetRegionInfo> regions,
-            AllocationStatus allocationStatus = null)
+            AllocationStatus allocationStatus = null,
+            List<BuildConfigInfo> buildConfigInfos = null)
         {
             FleetName = fleetName;
             FleetStatus = fleetStatus;
@@ -24,6 +25,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
             Regions = regions;
             Id = id;
             Allocation = allocationStatus;
+            BuildConfigInfos = buildConfigInfos;
         }
 
         /// <summary>
@@ -48,6 +50,11 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
         /// Fleet allocation information
         /// </summary>
         public AllocationStatus Allocation { get; }
+
+        /// <summary>
+        /// Information about the build configurations
+        /// </summary>
+        public List<BuildConfigInfo> BuildConfigInfos { get; }
 
         /// <summary>
         /// Status of the fleet
@@ -84,5 +91,12 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
         /// <param name="RegionId">Region ID</param>
         /// <param name="Name">Name of associated region</param>
         public record FleetRegionInfo(Guid Id, Guid RegionId, string Name);
+
+        /// <summary>
+        /// Information of a BuildConfig
+        /// </summary>
+        /// <param name="Id">BuildConfig ID</param>
+        /// <param name="Name">Name of associated BuildConfig</param>
+        public record BuildConfigInfo(long Id, string Name);
     }
 }

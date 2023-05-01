@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.multiplay",
   "displayName": "Multiplay",
-  "version": "1.2.1-exp.4",
+  "version": "1.2.1-exp.5",
   "unity": "2020.3",
   "description": "The Multiplay SDK provides functionality to facilitate Multiplay services.",
   "_upm": {
@@ -24,15 +24,15 @@
     "com.unity.nuget.newtonsoft-json": "3.0.2"
   },
   "relatedPackages": {
-    "com.unity.services.multiplay.tests": "1.2.1-exp.4"
+    "com.unity.services.multiplay.tests": "1.2.1-exp.5"
   },
   "upmCi": {
-    "footprint": "3bf9ce09babacaac26c565a6ff65a519c53e0e99"
+    "footprint": "dc5de5977016c03f9253b1ed6bc571b556a6d04c"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.multiplay@1.2/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "0cde252e5a9b913788d1b91d94438f3871416a44"
+    "revision": "ded71e92113499fed7bf77d12bdd4d29ca0e68d1"
   }
 }

@@ -59,7 +59,6 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds = null,
             CancellationToken token = default);
 
-
         /// <summary>
         /// Creates a test allocation for the associated Fleet
         /// </summary>

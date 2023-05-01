@@ -54,7 +54,8 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                     osId: resItem.OsID,
                     osName: resItem.OsName,
                     regions: FromApi(resItem.Regions),
-                    allocationStatus: FromApi(resItem.Servers)
+                    allocationStatus: FromApi(resItem.Servers),
+                    buildConfigInfos: resItem.BuildConfigurations.Select(FromApi).ToList()
                 ));
             }
 
@@ -81,7 +82,9 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 FromApi(result.Status, name),
                 result.OsID,
                 result.OsName,
-                FromApi(result.Regions));
+                FromApi(result.Regions),
+                allocationStatus: FromApi(result.Servers),
+                buildConfigInfos: result.BuildConfigurations.Select(FromApi).ToList());
         }
 
         static FleetInfo.Status FromApi(FleetListItem.StatusOptions statusOption, string fleetName)
@@ -144,12 +147,25 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 
         static FleetInfo.AllocationStatus FromApi(FleetListItem.ServersAlloc resItemServers)
         {
+            if (resItemServers == null)
+                return null;
+
             return new FleetInfo.AllocationStatus(
                 resItemServers.All.Total,
                 resItemServers.All.Status.Allocated,
                 resItemServers.All.Status.Available,
                 resItemServers.All.Status.Online
             );
+        }
+
+        static FleetInfo.BuildConfigInfo FromApi(BuildConfiguration buildConfig)
+        {
+            if (buildConfig == null)
+                return null;
+
+            return new FleetInfo.BuildConfigInfo(
+                buildConfig.Id,
+                buildConfig.Name);
         }
 
         static List<FleetInfo.FleetRegionInfo> FromApi(List<FleetRegion1> regions)
