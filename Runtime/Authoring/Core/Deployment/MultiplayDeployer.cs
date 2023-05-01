@@ -55,7 +55,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                 = await DeployBuildConfigs(buildConfigs, uploadResult.SuccessfulSyncs, token);
 
             fleets = FilterFleets(fleets, failedBuildConfigs);
-            await DeployFleets(fleets, token, buildConfigIds);
+            await DeployFleets(fleets, buildConfigIds, token);
         }
 
         /// <summary>
@@ -256,19 +256,17 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return (buildConfigIds, failedBuildConfigs);
         }
 
-        /// <summary>
-        /// Creates or Updates the associated fleets
-        /// </summary>
         public async Task DeployFleets(
             IReadOnlyList<FleetItem> items,
-            CancellationToken token,
-            Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds)
+            Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds = null,
+            CancellationToken token = default)
         {
+            buildConfigIds ??= new Dictionary<BuildConfigurationName, BuildConfigurationId>();
             foreach (var fleet in items)
             {
                 try
                 {
-                    List<BuildConfigurationId> ids = new List<BuildConfigurationId>();
+                    var ids = new List<BuildConfigurationId>();
                     foreach (var configuration in fleet.Definition.BuildConfigurations)
                     {
                         if (!buildConfigIds.ContainsKey(configuration))
@@ -356,6 +354,16 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             CancellationToken cancellationToken = default)
         {
             return m_Deployment.CreateAndSyncTestAllocationAsync(fleetName, buildConfigurationName, cancellationToken);
+        }
+
+        public Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default)
+        {
+            return m_Deployment.ListTestAllocations(fleetId, cancellationToken);
+        }
+
+        public Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken cancellationToken = default)
+        {
+            return m_Deployment.RemoveTestAllocation(fleetId, allocationId, cancellationToken);
         }
 
         public Task<Dictionary<string, Guid>> GetAvailableRegions()

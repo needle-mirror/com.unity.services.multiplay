@@ -188,6 +188,16 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return allocationInformation;
         }
 
+        public Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default)
+        {
+            return m_AllocationApi.ListTestAllocations(fleetId, cancellationToken);
+        }
+
+        public Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken token)
+        {
+            return m_AllocationApi.RemoveTestAllocation(fleetId, allocationId, token);
+        }
+
         public Task<Dictionary<string, Guid>> GetAvailableRegions()
         {
             return m_FleetApi.GetRegions();

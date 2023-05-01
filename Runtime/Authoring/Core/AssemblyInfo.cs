@@ -18,6 +18,7 @@ using System.Runtime.CompilerServices;
 #endif
 
 // Needed to enable record types
+// ReSharper disable once CheckNamespace
 namespace System.Runtime.CompilerServices
 {
     static class IsExternalInit {}

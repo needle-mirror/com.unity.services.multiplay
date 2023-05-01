@@ -21,6 +21,8 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         Task<BuildConfigurationId> FindBuildConfigAsync(BuildConfigurationName name, CancellationToken cancellationToken = default);
         Task<FleetId> DeployFleetAsync(FleetName name, IList<BuildConfigurationId> buildConfigs, MultiplayConfig.FleetDefinition definition, CancellationToken cancellationToken = default);
         Task<AllocationInformation> CreateAndSyncTestAllocationAsync(FleetName fleetName, BuildConfigurationName buildConfigurationName, CancellationToken cancellationToken = default);
+        Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default);
+        Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken cancellationToken = default);
         Task<Dictionary<string, Guid>> GetAvailableRegions();
         Task<IReadOnlyList<FleetInfo>> GetFleets();
         Task DeleteFleet(FleetId fleetId);

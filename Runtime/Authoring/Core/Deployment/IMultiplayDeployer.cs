@@ -49,13 +49,15 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             Dictionary<BuildName, BuildId> successfulUploads,
             CancellationToken token);
 
+
         /// <summary>
         /// Creates or Updates the associated fleets
         /// </summary>
+        /// <param name="buildConfigIds">If the config IDs are known, they will not be searched remotely</param>
         Task DeployFleets(
             IReadOnlyList<FleetItem> items,
-            CancellationToken token,
-            Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds);
+            Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds = null,
+            CancellationToken token = default);
 
 
         /// <summary>
@@ -65,6 +67,16 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             FleetName fleetName,
             BuildConfigurationName buildConfigurationName,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Lists existing test allocations for the associated fleet
+        /// </summary>
+        Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sends a request to process the removal of a test allocation
+        /// </summary>
+        Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets regions that are available for fleet scaling options

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
@@ -68,9 +69,88 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 response.Result.GamePort);
         }
 
+        public async Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default)
+        {
+            var request = new ListTestAllocationsRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId);
+            var response = await TryCatchRequestAsync(request, async(req) => {
+                return await m_Client.ListTestAllocationsAsync(request, null);
+            });
+
+            if (response.Status != 200)
+            {
+                return null;
+            }
+
+            var res = new List<AllocationInformation>();
+            foreach (var ai in response.Result.Allocations)
+            {
+                res.Add(
+                    new AllocationInformation(
+                        ai.AllocationId,
+                        ai.FleetId,
+                        ai.RegionId,
+                        ai.BuildConfigurationId,
+                        ai.ServerId,
+                        ai.MachineId,
+                        ai.Ipv4,
+                        ai.Ipv6,
+                        ai.GamePort));
+            }
+
+            return res;
+        }
+
+        public async Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken cancellationToken = default)
+        {
+            var request = new ProcessTestDeallocationRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, fleetId.Guid, allocationId);
+            var response = await TryCatchRequestAsync(request, async(req) => {
+                return await m_Client.ProcessTestDeallocationAsync(request, null);
+            });
+            if (response.Status > 299)
+            {
+                throw new MultiplayAuthoringException(
+                    (int)response.Status,
+                    $"Response does not indicate success. Http Status '{response.Status}'");
+            }
+        }
+
         async Task<AdminApis.Allocations.Response<TResponse>> TryCatchRequestAsync<TRequest, TResponse>(TRequest request, Func<TRequest, Task<AdminApis.Allocations.Response<TResponse>>> func)
         {
             AdminApis.Allocations.Response<TResponse> response;
+            try
+            {
+                response = await func(request);
+            }
+            catch (AdminApis.Allocations.Http.HttpException<ListTestAllocations400Response> ex)
+            {
+                throw new MultiplayAuthoringException((int)ex.Response.StatusCode, ex.ActualError.Detail, ex);
+            }
+            catch (AdminApis.Allocations.Http.HttpException<ListTestAllocations401Response> ex)
+            {
+                throw new MultiplayAuthoringException((int)ex.Response.StatusCode, ex.ActualError.Detail, ex);
+            }
+            catch (AdminApis.Allocations.Http.HttpException<ListTestAllocations403Response> ex)
+            {
+                throw new MultiplayAuthoringException((int)ex.Response.StatusCode, ex.ActualError.Detail, ex);
+            }
+            catch (AdminApis.Allocations.Http.HttpException<ListTestAllocations404Response> ex)
+            {
+                throw new MultiplayAuthoringException((int)ex.Response.StatusCode, ex.ActualError.Detail, ex);
+            }
+            catch (AdminApis.Allocations.Http.HttpException<ListTestAllocations429Response> ex)
+            {
+                throw new MultiplayAuthoringException((int)ex.Response.StatusCode, ex.ActualError.Detail, ex);
+            }
+            catch (AdminApis.Allocations.Http.HttpException<ListTestAllocations500Response> ex)
+            {
+                throw new MultiplayAuthoringException((int)ex.Response.StatusCode, "Internal Server Error", ex);
+            }
+            return response;
+        }
+
+        async Task<AdminApis.Allocations.Response> TryCatchRequestAsync<TRequest>(TRequest request, Func<TRequest, Task<AdminApis.Allocations.Response>> func)
+        {
+            AdminApis.Allocations.Response response;
             try
             {
                 response = await func(request);
