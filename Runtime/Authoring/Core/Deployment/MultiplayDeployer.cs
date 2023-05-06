@@ -12,19 +12,18 @@ using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 {
     /// <summary>
-    /// Multiplay Deployer can deploy multiplay configuration items. TBA
+    /// Multiplay Deployer can deploy multiplay configuration items.
     /// </summary>
-    public class MultiplayDeployer
+    class MultiplayDeployer : IMultiplayDeployer
     {
-        readonly IDeploymentFacadeFactory m_DeploymentFacadeFactory;
         IDeploymentFacade m_Deployment;
 
         /// <summary>
         /// Create an instance of MultiplayDeployer
         /// </summary>
-        public MultiplayDeployer(IDeploymentFacadeFactory deploymentDeploymentFacadeFactory)
+        public MultiplayDeployer(IDeploymentFacade deployment)
         {
-            m_DeploymentFacadeFactory = deploymentDeploymentFacadeFactory;
+            m_Deployment = deployment;
         }
 
         /// <summary>
@@ -32,7 +31,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         /// </summary>
         public async Task InitAsync()
         {
-            m_Deployment = await m_DeploymentFacadeFactory.BuildAsync();
+            await m_Deployment.InitAsync();
         }
 
         /// <summary>
@@ -72,14 +71,14 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         /// <summary>
         /// Uploads the associated builds, and waits for them to be available.
         /// </summary>
-        public async Task<UploadResult> UploadAndSyncBuilds(
+        public async Task<IMultiplayDeployer.UploadResult> UploadAndSyncBuilds(
             List<BuildItem> successfulBuilds,
             CancellationToken token = default)
         {
             var(uploadResults, failedUploads) = await UploadBuilds(successfulBuilds, token);
 
             var(successfulSyncs, failedSyncs) = await SyncBuilds(uploadResults, token);
-            return new UploadResult(uploadResults, failedUploads, successfulSyncs, failedSyncs);
+            return new IMultiplayDeployer.UploadResult(uploadResults, failedUploads, successfulSyncs, failedSyncs);
         }
 
         async Task<(List<BuildItem>, List<BuildItem>)> CreateBuildBinaries(
@@ -135,6 +134,15 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                     var uploadResult = await m_Deployment.UploadBuildAsync(buildItem, token);
                     uploadResults.Add(buildItem, uploadResult);
                     buildItem.Progress = 66f;
+                }
+                catch (MultiplayAuthoringException e)
+                {
+                    var status = new DeploymentStatus(
+                        $"Failed to Upload build: {e.Message}.",
+                        "Please make sure you have enable game server hosting in the dashboard.",
+                        SeverityLevel.Error);
+                    buildItem.Status = status;
+                    failedUploads.Add(buildItem);
                 }
                 catch (Exception e)
                 {
@@ -342,6 +350,29 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             }
         }
 
+        public Task<AllocationInformation> CreateAndSyncTestAllocationAsync(
+            FleetName fleetName,
+            BuildConfigurationName buildConfigurationName,
+            CancellationToken cancellationToken = default)
+        {
+            return m_Deployment.CreateAndSyncTestAllocationAsync(fleetName, buildConfigurationName, cancellationToken);
+        }
+
+        public Task<Dictionary<string, Guid>> GetAvailableRegions()
+        {
+            return m_Deployment.GetAvailableRegions();
+        }
+
+        public Task DeleteFleet(FleetId fleetId)
+        {
+            return m_Deployment.DeleteFleet(fleetId);
+        }
+
+        public Task<IReadOnlyList<FleetInfo>> GetFleets()
+        {
+            return m_Deployment.GetFleets();
+        }
+
         List<BuildConfigurationItem> FilterBuildConfigs(
             IReadOnlyList<BuildConfigurationItem> buildConfigs,
             List<BuildItem> failedBuilds,
@@ -422,18 +453,5 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 
             return true;
         }
-
-        /// <summary>
-        /// Represents the result of a build upload operation
-        /// </summary>
-        /// <param name="UploadResults">The individual upload result for the build item</param>
-        /// <param name="FailedUploads">The Builds that failed to upload</param>
-        /// <param name="SuccessfulSyncs">The builds that were successfully synced</param>
-        /// <param name="FailedSyncs">The builds that failed to sync</param>
-        public record UploadResult(
-            Dictionary<BuildItem, BuildUploadResult> UploadResults,
-            List<BuildItem> FailedUploads,
-            Dictionary<BuildName, BuildId> SuccessfulSyncs,
-            List<BuildItem> FailedSyncs);
     }
 }

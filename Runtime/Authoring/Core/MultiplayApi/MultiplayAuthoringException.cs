@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Services.Multiplay.Authoring.Core
+namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
     class MultiplayAuthoringException : Exception
     {

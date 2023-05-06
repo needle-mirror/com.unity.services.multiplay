@@ -8,7 +8,7 @@ namespace Unity.Services.Multiplay.Authoring.Core
         internal const string k_MultiplayServerBuildDirectory = "Builds/Multiplay";
         internal const string k_MultiplayServerExecutableName = "Server";
 
-        private readonly IBinaryBuilder m_BinaryBuilder;
+        readonly IBinaryBuilder m_BinaryBuilder;
 
         public MultiplayBuildAuthoring(IBinaryBuilder binaryBuilder)
         {

@@ -10,13 +10,9 @@ namespace Unity.Services.Multiplay.Authoring.Core.Builds
         /// <summary>
         /// ID of the cloud bucket
         /// </summary>
-        public Guid Id { private get; init; }
+        public Guid Guid { get; init; }
 
-        /// <summary>
-        /// Gets the CloudBucket as a GUID
-        /// </summary>
-        public Guid ToGuid() => Id;
         /// <inheritdoc />
-        public override string ToString() => Id.ToString();
+        public override string ToString() => Guid.ToString();
     }
 }

@@ -8,7 +8,8 @@ namespace Unity.Services.Multiplay.Authoring.Core.Model
     /// Represents a deployable Fleet object
     /// </summary>
     [Serializable]
-    public class FleetItem : DeploymentItem, IResourceRef
+    public class
+        FleetItem : DeploymentItem, IResourceRef
     {
         /// <summary>
         /// Create a new instance of a FleetItem

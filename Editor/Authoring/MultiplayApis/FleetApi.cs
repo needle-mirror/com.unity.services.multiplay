@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.Multiplay.Authoring.Core;
 using Unity.Services.Multiplay.Authoring.Core.Assets;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Fleets.Apis.Fleets;
@@ -14,13 +13,26 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 {
     class FleetApi : IFleetApi
     {
-        readonly IMultiplayApiConfig m_ApiConfig;
+        IMultiplayApiConfig m_ApiConfig;
         readonly IFleetsApiClient m_Client;
+        readonly IApiAuthenticator m_ApiInit;
 
-        public FleetApi(IMultiplayApiConfig apiConfig, IFleetsApiClient client)
+        public FleetApi(IFleetsApiClient client, IApiAuthenticator apiInit)
         {
-            m_ApiConfig = apiConfig;
             m_Client = client;
+            m_ApiInit = apiInit;
+            m_ApiConfig = ApiConfig.Empty;
+        }
+
+        public async Task InitAsync()
+        {
+            var(config, basePath, headers) = await m_ApiInit.Authenticate();
+            ((FleetsApiClient)m_Client).Configuration = new AdminApis.Fleets.Configuration(
+                basePath,
+                null,
+                null,
+                headers);
+            m_ApiConfig = config;
         }
 
         public async Task<IReadOnlyList<FleetInfo>> List(CancellationToken cancellationToken = default)
@@ -37,7 +49,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             {
                 res.Add(new FleetInfo(
                     resItem.Name,
-                    id: new FleetId { Id = resItem.Id },
+                    id: new FleetId { Guid = resItem.Id },
                     fleetStatus: FromApi(resItem.Status, resItem.Name),
                     osId: resItem.OsID,
                     osName: resItem.OsName,
@@ -65,7 +77,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             return new FleetInfo(
                 result.Name,
                 new FleetId
-                { Id = result.Id} ,
+                { Guid = result.Id} ,
                 FromApi(result.Status, name),
                 result.OsID,
                 result.OsName,
@@ -92,7 +104,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 
         static List<FleetInfo.FleetRegionInfo> FromApi(List<FleetRegion> regions)
         {
-            return regions.Select(r => new FleetInfo.FleetRegionInfo(r.RegionID, r.RegionID, r.RegionName)).ToList();
+            return regions.Select(r => new FleetInfo.FleetRegionInfo(r.Id, r.RegionID, r.RegionName)).ToList();
         }
 
         public async Task<FleetInfo> Create(string name, IList<BuildConfigurationId> buildConfigurations, MultiplayConfig.FleetDefinition definition, CancellationToken cancellationToken = default)
@@ -101,7 +113,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 
             var fleet = new FleetCreateRequest(
                 name,
-                buildConfigurations.Select(b => b.ToLong()).ToList(),
+                buildConfigurations.Select(b => b.Id).ToList(),
                 definition.Regions.Select(r => new Region(regions[r.Key], r.Value.MinAvailable, r.Value.MaxServers)).ToList(),
                 osID: Guid.Empty, // Must be set in order to avoid breaking the API
                 osFamily: FleetCreateRequest.OsFamilyOptions.LINUX);
@@ -109,7 +121,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.CreateFleetAsync(req);
             });
-            return new FleetInfo(response.Result.Name, new FleetId { Id = response.Result.Id }, FromApi(response.Result.Status, name), response.Result.OsID, response.Result.Name, FromApi(response.Result.FleetRegions));
+            return new FleetInfo(response.Result.Name, new FleetId { Guid = response.Result.Id }, FromApi(response.Result.Status, name), response.Result.OsID, response.Result.Name, FromApi(response.Result.FleetRegions));
         }
 
         static FleetInfo.Status FromApi(Fleet.StatusOptions statusOption, string fleetName)
@@ -156,9 +168,9 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var fleet = new FleetUpdateRequest(
                 name,
                 osId, // Must be set in order to avoid breaking the API
-                buildConfigurations.Select(b => b.ToLong()).ToList()
+                buildConfigurations.Select(b => b.Id).ToList()
             );
-            var request = new UpdateFleetRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.ToGuid(), fleet);
+            var request = new UpdateFleetRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.Guid, fleet);
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.UpdateFleetAsync(req);
             });
@@ -166,7 +178,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             await UpdateRegions(id, response.Result, definition);
         }
 
-        public async Task Clear()
+        internal async Task Clear()
         {
             var listRequest = new ListFleetsRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId);
             var fleetsResponse = await TryCatchRequestAsync(listRequest, async(req) => {
@@ -204,7 +216,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 {
                     var regionDefinition = new AddRegionRequest(regions[regionName], region.MinAvailable, region.MaxServers);
                     var regionReq = new AddFleetRegionRequest(
-                        m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.ToGuid(), regionDefinition);
+                        m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.Guid, regionDefinition);
                     await TryCatchRequestAsync(regionReq, async(req) => {
                         return await m_Client.AddFleetRegionAsync(regionReq);
                     });
@@ -212,9 +224,9 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 else
                 {
                     var regionId = existingRegions[regionName].RegionID;
-                    var regionDefinition = new UpdateRegionRequest(true, region.MinAvailable, region.MaxServers);
+                    var regionDefinition = new UpdateRegionRequest(region.Online, region.MinAvailable, region.MaxServers);
                     var regionReq = new UpdateFleetRegionRequest(
-                        m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.ToGuid(), regionId, regionDefinition);
+                        m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.Guid, regionId, regionDefinition);
                     await TryCatchRequestAsync(regionReq, async(req) => {
                         return await m_Client.UpdateFleetRegionAsync(regionReq);
                     });
@@ -223,20 +235,26 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 
             foreach (var toRemove in fleet.FleetRegions.Where(r => !definition.Regions.ContainsKey(r.RegionName)))
             {
-                var regionReq = new UpdateFleetRegionRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.ToGuid(), toRemove.RegionID);
+                var regionReq = new UpdateFleetRegionRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.Guid, toRemove.RegionID);
                 await TryCatchRequestAsync(regionReq, async(req) => {
                     return await m_Client.UpdateFleetRegionAsync(regionReq);
                 });
             }
         }
 
-        async Task<Dictionary<string, Guid>> GetRegions()
+        public async Task<Dictionary<string, Guid>> GetRegions()
         {
             var request = new ListTemplateFleetRegionsRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId);
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.ListTemplateFleetRegionsAsync(req);
             });
             return response.Result.ToDictionary(r => r.Name, r => r.RegionID);
+        }
+
+        public Task DeleteFleet(FleetId fleetId)
+        {
+            var request = new DeleteFleetRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, fleetId.Guid);
+            return TryCatchRequestAsync(request, async(req) => await m_Client.DeleteFleetAsync(req));
         }
 
         async Task<AdminApis.Fleets.Response> TryCatchRequestAsync<TRequest>(TRequest request, Func<TRequest, Task<AdminApis.Fleets.Response>> func)

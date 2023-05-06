@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
-    interface IAllocationApi
+    interface IAllocationApi : IInitializable
     {
         Task<AllocationResult> CreateTestAllocation(FleetId fleetId, Guid regionId, long buildConfigurationId, CancellationToken cancellationToken = default);
         Task<AllocationInformation> GetTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken cancellationToken = default);

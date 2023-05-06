@@ -14,24 +14,24 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
     class FleetStatusTracker
     {
         const string k_FleetStatus = "Fleet Status: ";
-        readonly IFleetApiFactory m_Factory;
         readonly ILogger m_Logger;
         readonly IDispatchToMainThread m_Dispatcher;
         readonly IItemStore m_DeploymentItemStore;
         readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly ITaskDelay m_TaskDelay;
-        IFleetApi m_FleetsClient;
+        readonly IFleetApi m_FleetsClient;
         Exception m_FailedToBuildClient;
+        bool m_ClientInitialized;
 
         public FleetStatusTracker(
-            IFleetApiFactory factory,
+            IFleetApi fleetClient,
             ILogger logger,
             IDispatchToMainThread dispatcher,
             IItemStore deploymentItemStore,
             IEnvironmentsApi environmentsApi,
             ITaskDelay taskDelay)
         {
-            m_Factory = factory;
+            m_FleetsClient = fleetClient;
             m_Logger = logger;
             m_Dispatcher = dispatcher;
             m_DeploymentItemStore = deploymentItemStore;
@@ -39,8 +39,10 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
             m_TaskDelay = taskDelay;
             m_EnvironmentsApi.PropertyChanged += (sender, args) =>
             {
-                m_FleetsClient = null;
+                m_ClientInitialized = false;
             };
+
+            m_ClientInitialized = false;
             // ReSharper disable once VirtualMemberCallInConstructor : Intentional for testing purposes
             StartLoop();
         }
@@ -52,7 +54,9 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
             {
                 m_Logger.LogVerbose($"[{nameof(FleetStatusTracker)}] Checking fleet statuses");
 
-                if (!TryCreateClient())
+                TryInitClient();
+
+                if (!m_ClientInitialized)
                     return true;
 
                 fleetItems = m_DeploymentItemStore
@@ -97,18 +101,19 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
             while (true);
         }
 
-        bool TryCreateClient()
+        void TryInitClient()
         {
             if (m_FailedToBuildClient != null)
                 throw new Exception("Could not build client", m_FailedToBuildClient);
 
-            if (m_FleetsClient == null)
+            if (!m_ClientInitialized)
             {
                 m_Dispatcher.DispatchAction(async() =>
                 {
                     try
                     {
-                        m_FleetsClient = await m_Factory.Build();
+                        await m_FleetsClient.InitAsync();
+                        m_ClientInitialized = true;
                     }
                     catch (Exception e)
                     {
@@ -116,9 +121,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
                         m_FailedToBuildClient = e;
                     }
                 });
-                return m_FleetsClient != null;
             }
-            return true;
         }
 
         void UpdateUI(FleetItem fleetItem, FleetInfo fleetInfo)

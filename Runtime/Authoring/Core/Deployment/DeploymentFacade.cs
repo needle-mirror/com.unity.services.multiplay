@@ -182,10 +182,34 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                 throw new ArgumentException($"Fleet {fleetName.ToString()} not found");
             }
             var buildConfigurationId = await FindBuildConfigAsync(buildConfigurationName, cancellationToken);
-            var allocationResult = await m_AllocationApi.CreateTestAllocation(fleetInfo.Id, fleetInfo.Regions.First().RegionId, buildConfigurationId.ToLong(), cancellationToken);
+            var allocationResult = await m_AllocationApi.CreateTestAllocation(fleetInfo.Id, fleetInfo.Regions.First().RegionId, buildConfigurationId.Id, cancellationToken);
 
             var allocationInformation = await m_AllocationApi.WaitForAllocation(fleetInfo.Id, allocationResult.AllocationId, cancellationToken);
             return allocationInformation;
+        }
+
+        public Task<Dictionary<string, Guid>> GetAvailableRegions()
+        {
+            return m_FleetApi.GetRegions();
+        }
+
+        public Task<IReadOnlyList<FleetInfo>> GetFleets()
+        {
+            return m_FleetApi.List();
+        }
+
+        public Task DeleteFleet(FleetId fleetId)
+        {
+            return m_FleetApi.DeleteFleet(fleetId);
+        }
+
+        public async Task InitAsync()
+        {
+            await m_CloudStorage.InitAsync();
+            await m_BuildsApi.InitAsync();
+            await m_ConfigApi.InitAsync();
+            await m_FleetApi.InitAsync();
+            await m_AllocationApi.InitAsync();
         }
     }
 }

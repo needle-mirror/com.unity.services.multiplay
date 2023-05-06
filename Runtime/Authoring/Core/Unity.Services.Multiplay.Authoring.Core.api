@@ -76,6 +76,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Assets
         {
             public int MaxServers { get; set; }
             public int MinAvailable { get; set; }
+            public bool Online { get; set; }
             public ScalingDefinition() {}
         }
     }
@@ -85,8 +86,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Builds
 {
     public struct CloudBucketId
     {
-        public System.Guid Id { set; }
-        public System.Guid ToGuid();
+        public System.Guid Guid { get; set; }
         public override string ToString();
     }
 }
@@ -113,49 +113,34 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         public override string ToString();
     }
 
-    public interface IDeploymentFacade
+    public interface IMultiplayDeployer
     {
-        public System.Threading.Tasks.Task BuildBinaryAsync(Unity.Services.Multiplay.Authoring.Core.Model.BuildItem buildItem, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.AllocationInformation> CreateAndSyncTestAllocationAsync(Unity.Services.Multiplay.Authoring.Core.Assets.FleetName fleetName, Unity.Services.Multiplay.Authoring.Core.Assets.BuildConfigurationName buildConfigurationName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildConfigurationId> DeployBuildConfigAsync(Unity.Services.Multiplay.Authoring.Core.Assets.BuildConfigurationName name, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId buildId, Unity.Services.Multiplay.Authoring.Core.Assets.MultiplayConfig.BuildConfigurationDefinition definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.FleetId> DeployFleetAsync(Unity.Services.Multiplay.Authoring.Core.Assets.FleetName name, System.Collections.Generic.IList<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildConfigurationId> buildConfigs, Unity.Services.Multiplay.Authoring.Core.Assets.MultiplayConfig.FleetDefinition definition, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId> FindBuildAsync(Unity.Services.Multiplay.Authoring.Core.Assets.BuildName name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildConfigurationId> FindBuildConfigAsync(Unity.Services.Multiplay.Authoring.Core.Assets.BuildConfigurationName name, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<bool> SyncBuildAsync(Unity.Services.Multiplay.Authoring.Core.Model.BuildItem buildItem, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId buildId, Unity.Services.Multiplay.Authoring.Core.Builds.CloudBucketId bucketId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task<BuildUploadResult> UploadBuildAsync(Unity.Services.Multiplay.Authoring.Core.Model.BuildItem buildItem, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-        public System.Threading.Tasks.Task WarnBuildTargetChanged(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-    }
-
-    public interface IDeploymentFacadeFactory
-    {
-        public System.Threading.Tasks.Task<IDeploymentFacade> BuildAsync();
-    }
-
-    public class MultiplayDeployer
-    {
-        public MultiplayDeployer(IDeploymentFacadeFactory deploymentDeploymentFacadeFactory) {}
         public System.Threading.Tasks.Task<System.ValueTuple<System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem>, System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem>>> BuildBinaries(System.Collections.Generic.IReadOnlyList<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> buildItems, System.Threading.CancellationToken token = default(System.Threading.CancellationToken));
+        public System.Threading.Tasks.Task<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.AllocationInformation> CreateAndSyncTestAllocationAsync(Unity.Services.Multiplay.Authoring.Core.Assets.FleetName fleetName, Unity.Services.Multiplay.Authoring.Core.Assets.BuildConfigurationName buildConfigurationName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public System.Threading.Tasks.Task DeleteFleet(Unity.Services.Multiplay.Authoring.Core.MultiplayApi.FleetId fleetName);
         public System.Threading.Tasks.Task Deploy(System.Collections.Generic.IReadOnlyList<Unity.Services.DeploymentApi.Editor.DeploymentItem> items, System.Threading.CancellationToken token = default(System.Threading.CancellationToken));
         public System.Threading.Tasks.Task<System.ValueTuple<System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Assets.BuildConfigurationName, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildConfigurationId>, System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildConfigurationItem>>> DeployBuildConfigs(System.Collections.Generic.IReadOnlyList<Unity.Services.Multiplay.Authoring.Core.Model.BuildConfigurationItem> items, System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Assets.BuildName, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId> successfulUploads, System.Threading.CancellationToken token);
         public System.Threading.Tasks.Task DeployFleets(System.Collections.Generic.IReadOnlyList<Unity.Services.Multiplay.Authoring.Core.Model.FleetItem> items, System.Threading.CancellationToken token, System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Assets.BuildConfigurationName, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildConfigurationId> buildConfigIds);
+        public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, System.Guid>> GetAvailableRegions();
+        public System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Unity.Services.Multiplay.Authoring.Core.MultiplayApi.FleetInfo>> GetFleets();
         public System.Threading.Tasks.Task InitAsync();
-        public System.Threading.Tasks.Task<MultiplayDeployer.UploadResult> UploadAndSyncBuilds(System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> successfulBuilds, System.Threading.CancellationToken token = default(System.Threading.CancellationToken));
-        public class UploadResult : System.IEquatable<MultiplayDeployer.UploadResult>
+        public System.Threading.Tasks.Task<IMultiplayDeployer.UploadResult> UploadAndSyncBuilds(System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> successfulBuilds, System.Threading.CancellationToken token = default(System.Threading.CancellationToken));
+        public class UploadResult : System.IEquatable<IMultiplayDeployer.UploadResult>
         {
             protected virtual System.Type EqualityContract { get; }
             public System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> FailedSyncs { get; set; }
             public System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> FailedUploads { get; set; }
             public System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Assets.BuildName, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId> SuccessfulSyncs { get; set; }
             public System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem, BuildUploadResult> UploadResults { get; set; }
-            protected UploadResult(MultiplayDeployer.UploadResult original) {}
+            protected UploadResult(IMultiplayDeployer.UploadResult original) {}
             public UploadResult(System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem, BuildUploadResult> UploadResults, System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> FailedUploads, System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Assets.BuildName, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId> SuccessfulSyncs, System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> FailedSyncs) {}
-            public virtual MultiplayDeployer.UploadResult <Clone>$();
+            public virtual IMultiplayDeployer.UploadResult <Clone>$();
             public void Deconstruct(out System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem, BuildUploadResult> UploadResults, out System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> FailedUploads, out System.Collections.Generic.Dictionary<Unity.Services.Multiplay.Authoring.Core.Assets.BuildName, Unity.Services.Multiplay.Authoring.Core.MultiplayApi.BuildId> SuccessfulSyncs, out System.Collections.Generic.List<Unity.Services.Multiplay.Authoring.Core.Model.BuildItem> FailedSyncs);
             public override bool Equals(object obj);
-            public virtual bool Equals(MultiplayDeployer.UploadResult other);
+            public virtual bool Equals(IMultiplayDeployer.UploadResult other);
             public override int GetHashCode();
-            public static bool operator ==(MultiplayDeployer.UploadResult left, MultiplayDeployer.UploadResult right);
-            public static bool operator !=(MultiplayDeployer.UploadResult left, MultiplayDeployer.UploadResult right);
+            public static bool operator ==(IMultiplayDeployer.UploadResult left, IMultiplayDeployer.UploadResult right);
+            public static bool operator !=(IMultiplayDeployer.UploadResult left, IMultiplayDeployer.UploadResult right);
             protected virtual bool PrintMembers(System.Text.StringBuilder builder);
             public override string ToString();
         }
@@ -241,42 +226,86 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 
     public struct BuildConfigurationId
     {
-        public long Id { set; }
-        public long ToLong();
+        public long Id { get; set; }
     }
 
     public struct BuildId
     {
-        public long Id { set; }
-        public long ToLong();
+        public long Id { get; set; }
     }
 
     public struct FleetId
     {
-        public System.Guid Id { set; }
-        public System.Guid ToGuid();
+        public System.Guid Guid { get; set; }
     }
 
-    public interface ILogsApi
+    public class FleetInfo
+    {
+        public FleetInfo.AllocationStatus Allocation { get; }
+        public string FleetName { get; }
+        public FleetInfo.Status FleetStatus { get; }
+        public FleetId Id { get; }
+        public System.Collections.Generic.List<FleetInfo.FleetRegionInfo> Regions { get; }
+        public class AllocationStatus : System.IEquatable<FleetInfo.AllocationStatus>
+        {
+            public int Allocated { get; set; }
+            public int Available { get; set; }
+            protected virtual System.Type EqualityContract { get; }
+            public int Online { get; set; }
+            public int Total { get; set; }
+            protected AllocationStatus(FleetInfo.AllocationStatus original) {}
+            public AllocationStatus(int Total, int Allocated, int Available, int Online) {}
+            public virtual FleetInfo.AllocationStatus <Clone>$();
+            public void Deconstruct(out int Total, out int Allocated, out int Available, out int Online);
+            public override bool Equals(object obj);
+            public virtual bool Equals(FleetInfo.AllocationStatus other);
+            public override int GetHashCode();
+            public static bool operator ==(FleetInfo.AllocationStatus left, FleetInfo.AllocationStatus right);
+            public static bool operator !=(FleetInfo.AllocationStatus left, FleetInfo.AllocationStatus right);
+            protected virtual bool PrintMembers(System.Text.StringBuilder builder);
+            public override string ToString();
+        }
+        public class FleetRegionInfo : System.IEquatable<FleetInfo.FleetRegionInfo>
+        {
+            protected virtual System.Type EqualityContract { get; }
+            public System.Guid Id { get; set; }
+            public string Name { get; set; }
+            public System.Guid RegionId { get; set; }
+            protected FleetRegionInfo(FleetInfo.FleetRegionInfo original) {}
+            public FleetRegionInfo(System.Guid Id, System.Guid RegionId, string Name) {}
+            public virtual FleetInfo.FleetRegionInfo <Clone>$();
+            public void Deconstruct(out System.Guid Id, out System.Guid RegionId, out string Name);
+            public override bool Equals(object obj);
+            public virtual bool Equals(FleetInfo.FleetRegionInfo other);
+            public override int GetHashCode();
+            public static bool operator ==(FleetInfo.FleetRegionInfo left, FleetInfo.FleetRegionInfo right);
+            public static bool operator !=(FleetInfo.FleetRegionInfo left, FleetInfo.FleetRegionInfo right);
+            protected virtual bool PrintMembers(System.Text.StringBuilder builder);
+            public override string ToString();
+        }
+        public enum Status
+        {
+            Draining = 2,
+            Offline = 3,
+            Online = 1,
+        }
+    }
+
+    public interface IInitializable
+    {
+        public System.Threading.Tasks.Task InitAsync();
+    }
+
+    public interface ILogsApi : IInitializable
     {
         public System.Threading.Tasks.Task<LogSearchResult> SearchLogsAsync(LogSearchParams searchParams, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
     }
 
-    public interface ILogsApiFactory
-    {
-        public System.Threading.Tasks.Task<ILogsApi> Build();
-    }
-
-    public interface IServersApi
+    public interface IServersApi : IInitializable
     {
         public System.Threading.Tasks.Task<System.Collections.Generic.List<ActionLog>> GetServerActionLogsAsync(long serverId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
         public System.Threading.Tasks.Task<ServerInfo> GetServerAsync(long serverId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
         public System.Threading.Tasks.Task<bool> TriggerServerActionAsync(long serverId, ServerAction action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-    }
-
-    public interface IServersApiFactory
-    {
-        public System.Threading.Tasks.Task<IServersApi> Build();
     }
 
     public class LogEntry : System.IEquatable<LogEntry>

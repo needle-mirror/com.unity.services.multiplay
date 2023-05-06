@@ -7,7 +7,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Assets
 {
     class MultiplayConfigValidator : IMultiplayConfigValidator
     {
-        private IFileReader m_FileReader;
+        IFileReader m_FileReader;
 
         public MultiplayConfigValidator(IFileReader reader)
         {

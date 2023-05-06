@@ -6,13 +6,8 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
     public struct BuildConfigurationId
     {
         /// <summary>
-        /// The numerical value of the Build Config TBA
+        /// The numerical value of the Build Config
         /// </summary>
-        public long Id { private get; init; }
-
-        /// <summary>
-        /// The numerical value of the Build Config TBA
-        /// </summary>
-        public long ToLong() => Id;
+        public long Id { get; init; }
     }
 }

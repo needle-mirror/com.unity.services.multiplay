@@ -22,7 +22,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
                 using (var scope = Provider.CreateScope())
                 {
                     var buildItems = deploymentItems.OfType<BuildItem>().ToList();
-                    var deployer = scope.GetService<MultiplayDeployer>();
+                    var deployer = scope.GetService<IMultiplayDeployer>();
 
                     await deployer.InitAsync();
                     await deployer.BuildBinaries(buildItems, cancellationToken);

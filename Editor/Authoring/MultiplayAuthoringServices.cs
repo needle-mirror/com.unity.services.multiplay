@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Services.Core.Editor;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.DeploymentApi.Editor;
@@ -57,13 +58,6 @@ namespace Unity.Services.Multiplay.Authoring.Editor
             collection.Register(Default<IBinaryBuilder, BinaryBuilder>);
             collection.Register(Default<IMultiplayBuildAuthoring, MultiplayBuildAuthoring>);
             collection.Register(Default<IMultiplayConfigValidator, MultiplayConfigValidator>);
-            collection.Register(Default<ICloudStorageFactory, CcdCloudStorageFactory>);
-            collection.Register(Default<IFleetApiFactory, MultiplayApiFactory>);
-            collection.Register(Default<IBuildsApiFactory, MultiplayApiFactory>);
-            collection.Register(Default<IBuildConfigApiFactory, MultiplayApiFactory>);
-            collection.Register(Default<IAllocationApiFactory, MultiplayApiFactory>);
-            collection.Register(Default<IServersApiFactory, MultiplayApiFactory>);
-            collection.Register(Default<ILogsApiFactory, MultiplayApiFactory>);
 
             collection.Register(Default<IAccessTokens, AccessTokens>);
             collection.Register(Default<ICurrentTime, CurrentTime>);
@@ -79,11 +73,20 @@ namespace Unity.Services.Multiplay.Authoring.Editor
 
             collection.RegisterSingleton(Default<ObservableAssets<MultiplayConfigAsset>, MultiplayConfigObservableAssets>);
 
-
             collection.Register(Default<IDispatchToMainThread, DispatcherToMainThread>);
             collection.Register(Default<ITaskDelay, DefaultTaskDelay>);
-            collection.Register(Default<MultiplayDeployer>);
-            collection.Register(Default<IDeploymentFacadeFactory, DeploymentFacadeFactory>);
+            collection.Register(Default<IFleetApi, FleetApi>);
+            collection.Register(Default<ILogsApi, LogsApi>);
+            collection.Register(Default<IAllocationApi, AllocationApi>);
+            collection.Register(Default<IBuildsApi, BuildsApi>);
+            collection.Register(Default<IBuildConfigApi, BuildConfigApi>);
+            collection.Register(Default<IMultiplayDeployer, MultiplayDeployer>);
+            collection.Register(Default<IApiAuthenticator, ApiAuthenticator>);
+            collection.Register(Default<ICloudStorage, CcdCloudStorage>);
+            collection.Register(Default<ICcdAnalytics, DummyCcdAnalytics>);
+            collection.Register(Default<IDeploymentFacade, DeploymentFacade>);
+
+            RegisterAdminBoilerplate(collection);
 
             collection.RegisterSingleton<IItemStore>(_ => AssetPersistenceStore.Instance);
             collection.RegisterSingleton(_ => EnvironmentsApi.Instance);
@@ -104,9 +107,51 @@ namespace Unity.Services.Multiplay.Authoring.Editor
             collection.RegisterStartupSingleton(Default<FleetStatusTracker>);
         }
 
+        static void RegisterAdminBoilerplate(ServiceCollection collection)
+        {
+            collection.Register(
+                Default<AdminApis.Allocations.Apis.Allocations.IAllocationsApiClient,
+                        AdminApis.Allocations.Apis.Allocations.AllocationsApiClient>);
+            collection.Register(
+                Default<AdminApis.Builds.Apis.Builds.IBuildsApiClient, AdminApis.Builds.Apis.Builds.BuildsApiClient>);
+            collection.Register(
+                Default<AdminApis.BuildConfigs.Apis.BuildConfigurations.IBuildConfigurationsApiClient,
+                        AdminApis.BuildConfigs.Apis.BuildConfigurations.BuildConfigurationsApiClient>);
+            collection.Register(
+                Default<AdminApis.Fleets.Apis.Fleets.IFleetsApiClient, AdminApis.Fleets.Apis.Fleets.FleetsApiClient>);
+            collection.Register(
+                Default<AdminApis.Servers.Apis.Servers.IServersApiClient, AdminApis.Servers.Apis.Servers.ServersApiClient>);
+            collection.Register(Default<AdminApis.Logs.Apis.Logs.ILogsApiClient, AdminApis.Logs.Apis.Logs.LogsApiClient>);
+
+            collection.Register(
+                Default<AdminApis.Ccd.Apis.Entries.IEntriesApiClient, AdminApis.Ccd.Apis.Entries.EntriesApiClient>);
+            collection.Register(
+                Default<AdminApis.Ccd.Apis.Buckets.IBucketsApiClient, AdminApis.Ccd.Apis.Buckets.BucketsApiClient>);
+
+            collection.Register(_ => new AdminApis.Allocations.Configuration("", null, null, new Dictionary<string, string>()));
+            collection.Register(_ => new AdminApis.Builds.Configuration("", null, null, new Dictionary<string, string>()));
+            collection.Register(_ => new AdminApis.BuildConfigs.Configuration("", null, null, new Dictionary<string, string>()));
+            collection.Register(_ => new AdminApis.Fleets.Configuration("", null, null, new Dictionary<string, string>()));
+            collection.Register(_ => new AdminApis.Servers.Configuration("", null, null, new Dictionary<string, string>()));
+            collection.Register(_ => new AdminApis.Logs.Configuration("", null, null, new Dictionary<string, string>()));
+            collection.Register(_ => new AdminApis.Ccd.Configuration("", null, null, new Dictionary<string, string>()));
+
+            collection.Register(Default<System.Net.Http.HttpClient>);
+            collection.Register(Default<AdminApis.Allocations.Http.IHttpClient, AdminApis.Allocations.Http.HttpClient>);
+            collection.Register(Default<AdminApis.Builds.Http.IHttpClient, AdminApis.Builds.Http.HttpClient>);
+            collection.Register(Default<AdminApis.Fleets.Http.IHttpClient, AdminApis.Fleets.Http.HttpClient>);
+            collection.Register(Default<AdminApis.Ccd.Http.IHttpClient, AdminApis.Ccd.Http.HttpClient>);
+            collection.Register(Default<AdminApis.Logs.Http.IHttpClient, AdminApis.Logs.Http.HttpClient>);
+            collection.Register(Default<AdminApis.Servers.Http.IHttpClient, AdminApis.Servers.Http.HttpClient>);
+            collection.Register(Default<AdminApis.BuildConfigs.Http.IHttpClient, AdminApis.BuildConfigs.Http.HttpClient>);
+        }
+
         /// <summary>
         /// Get the service specified by the type T
         /// </summary>
+        /// <param name="provider">Provider in which to find service</param>
+        /// <typeparam name="T">Type to get</typeparam>
+        /// <returns>The instance of the specified service if registered. Throws otherwise</returns>
         public static T GetService<T>(this IServiceProvider provider)
         {
             return (T)provider.GetService(typeof(T));

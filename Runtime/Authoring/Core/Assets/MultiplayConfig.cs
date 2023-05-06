@@ -65,15 +65,15 @@ namespace Unity.Services.Multiplay.Authoring.Core.Assets
             /// </summary>
             public IDictionary<string, string> Variables { get; init; } = new Dictionary<string, string>();
             /// <summary>
-            /// The number of cores that should be used for this build configuration
+            /// Deprecated - The number of cores that should be used for this build configuration
             /// </summary>
             public int Cores { get; init; } = 1;
             /// <summary>
-            /// The CPU utilisation per core. TBD
+            /// Deprecated - The CPU utilisation per core.
             /// </summary>
             public int SpeedMhz { get; init; } = 750;
             /// <summary>
-            /// Memory required per server. TBD
+            /// Deprecated - Memory required per server.
             /// </summary>
             public int MemoryMiB { get; init; } = 800;
         }
@@ -103,6 +103,11 @@ namespace Unity.Services.Multiplay.Authoring.Core.Assets
             /// Maximum number of servers to host in the fleet region
             /// </summary>
             public int MaxServers { get; init; }
+
+            /// <summary>
+            /// Is the Region online
+            /// </summary>
+            public bool Online { get; init; } = true;
         }
 
         /// <summary>

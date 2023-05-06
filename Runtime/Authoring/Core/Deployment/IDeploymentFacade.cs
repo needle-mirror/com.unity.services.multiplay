@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,8 +9,9 @@ using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 
 namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 {
-    public interface IDeploymentFacade
+    interface IDeploymentFacade
     {
+        Task InitAsync();
         Task BuildBinaryAsync(BuildItem buildItem, CancellationToken cancellationToken = default);
         Task WarnBuildTargetChanged(CancellationToken cancellationToken = default);
         Task<BuildUploadResult> UploadBuildAsync(BuildItem buildItem, CancellationToken cancellationToken = default);
@@ -19,5 +21,8 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         Task<BuildConfigurationId> FindBuildConfigAsync(BuildConfigurationName name, CancellationToken cancellationToken = default);
         Task<FleetId> DeployFleetAsync(FleetName name, IList<BuildConfigurationId> buildConfigs, MultiplayConfig.FleetDefinition definition, CancellationToken cancellationToken = default);
         Task<AllocationInformation> CreateAndSyncTestAllocationAsync(FleetName fleetName, BuildConfigurationName buildConfigurationName, CancellationToken cancellationToken = default);
+        Task<Dictionary<string, Guid>> GetAvailableRegions();
+        Task<IReadOnlyList<FleetInfo>> GetFleets();
+        Task DeleteFleet(FleetId fleetId);
     }
 }

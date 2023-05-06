@@ -6,7 +6,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
     /// <summary>
     /// Allows to find logs happening on the remote server
     /// </summary>
-    public interface ILogsApi
+    public interface ILogsApi : IInitializable
     {
         /// <summary>
         /// Returns logs found according to the parameters

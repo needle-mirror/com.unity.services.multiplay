@@ -5,10 +5,20 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.2.0-exp.1] - 2023-04-01
+## [1.2.1-exp.2] - 2023-05-06
+* Updated content of apple privacy manifest
 * Added API to interact with Admin API
 * Added API to interact with deployment capabilities
 
+## [1.2.1] - 2024-04-30
+* Added apple privacy manifest
+* Updated com.unity.services.core to 1.12.5
+* Updated com.unity.services.wire to 1.2.5
+
+## [1.2.0] - 2024-04-05
+* Disable authoring component if the Multiplayer SDK is present, to prefer that one over the one in this package
+  * Multiplay will own the integration from [1-1.2)
+  * Unified package will own it onwards
 
 ## [1.1.1] - 2023-11-08
 * When creating a build, avoid switching target as this can cause a domain reload, instead emit a warning

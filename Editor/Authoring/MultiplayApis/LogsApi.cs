@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.Multiplay.Authoring.Core;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Logs.Apis.Logs;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Logs.Models;
@@ -16,12 +15,25 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
     class LogsApi : ILogsApi
     {
         readonly ILogsApiClient m_Client;
-        readonly IMultiplayApiConfig m_ApiConfig;
+        readonly IApiAuthenticator m_ApiInit;
+        IMultiplayApiConfig m_ApiConfig;
 
-        public LogsApi(IMultiplayApiConfig apiConfig, ILogsApiClient client)
+        public LogsApi(ILogsApiClient client, IApiAuthenticator apiInit)
         {
-            m_ApiConfig = apiConfig;
             m_Client = client;
+            m_ApiInit = apiInit;
+            m_ApiConfig = ApiConfig.Empty;
+        }
+
+        public async Task InitAsync()
+        {
+            var(config, basePath, headers) = await m_ApiInit.Authenticate();
+            ((LogsApiClient)m_Client).Configuration = new AdminApis.Logs.Configuration(
+                basePath,
+                null,
+                null,
+                headers);
+            m_ApiConfig = config;
         }
 
         public async Task<LogSearchResult> SearchLogsAsync(LogSearchParams searchParams, CancellationToken cancellationToken = default)

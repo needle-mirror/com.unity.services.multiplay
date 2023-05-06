@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.Multiplay.Authoring.Core;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Allocations.Allocations;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Allocations.Apis.Allocations;
@@ -12,12 +11,25 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
     class AllocationApi : IAllocationApi
     {
         readonly IAllocationsApiClient m_Client;
-        readonly IMultiplayApiConfig m_ApiConfig;
+        IMultiplayApiConfig m_ApiConfig;
+        readonly IApiAuthenticator m_ApiInit;
 
-        public AllocationApi(IMultiplayApiConfig apiConfig, IAllocationsApiClient client)
+        public AllocationApi(IAllocationsApiClient client, IApiAuthenticator apiInit)
         {
-            m_ApiConfig = apiConfig;
             m_Client = client;
+            m_ApiInit = apiInit;
+            m_ApiConfig = ApiConfig.Empty;
+        }
+
+        public async Task InitAsync()
+        {
+            var(config, basePath, headers) = await m_ApiInit.Authenticate();
+            ((AllocationsApiClient)m_Client).Configuration = new AdminApis.Allocations.Configuration(
+                basePath,
+                null,
+                null,
+                headers);
+            m_ApiConfig = config;
         }
 
         public async Task<AllocationResult> CreateTestAllocation(FleetId fleetId, Guid regionId, long buildConfigurationId, CancellationToken cancellationToken = default)
@@ -25,7 +37,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var emptyGuid = Guid.NewGuid();
             var form = new TestAllocateRequestForm(regionId, buildConfigurationId, emptyGuid);
 
-            var request = new ProcessTestAllocationRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, fleetId.ToGuid(), form);
+            var request = new ProcessTestAllocationRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, fleetId.Guid, form);
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.ProcessTestAllocationAsync(request, null);
             });
@@ -35,7 +47,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
         public async Task<AllocationInformation> GetTestAllocation(FleetId fleetId, Guid allocationId,
             CancellationToken cancellationToken = default)
         {
-            var request = new GetTestAllocationRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, fleetId.ToGuid(), allocationId);
+            var request = new GetTestAllocationRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, fleetId.Guid, allocationId);
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.GetTestAllocationAsync(request, null);
             });
