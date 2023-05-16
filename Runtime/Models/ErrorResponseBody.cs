@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Scripting;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -25,7 +26,7 @@ namespace Unity.Services.Multiplay.Models
     /// </summary>
     [Preserve]
     [DataContract(Name = "ErrorResponseBody")]
-    public class ErrorResponseBody
+    internal class ErrorResponseBody
     {
         /// <summary>
         /// Creates an instance of ErrorResponseBody.
@@ -47,12 +48,14 @@ namespace Unity.Services.Multiplay.Models
         [Preserve]
         [DataMember(Name = "status", IsRequired = true, EmitDefaultValue = true)]
         public int Status{ get; }
+        
         /// <summary>
         /// A human-readable explanation specific to this occurrence of the problem. Ought to focus on helping the client correct the problem, rather than giving debugging information.
         /// </summary>
         [Preserve]
         [DataMember(Name = "detail", IsRequired = true, EmitDefaultValue = true)]
         public string Detail{ get; }
+        
         /// <summary>
         /// SHOULD be the same as the recommended HTTP status phrase for that code.
         /// </summary>
@@ -60,6 +63,50 @@ namespace Unity.Services.Multiplay.Models
         [DataMember(Name = "title", IsRequired = true, EmitDefaultValue = true)]
         public string Title{ get; }
     
+        /// <summary>
+        /// Formats a ErrorResponseBody into a string of key-value pairs for use as a path parameter.
+        /// </summary>
+        /// <returns>Returns a string representation of the key-value pairs.</returns>
+        internal string SerializeAsPathParam()
+        {
+            var serializedModel = "";
+
+            serializedModel += "status," + Status.ToString() + ",";
+            if (Detail != null)
+            {
+                serializedModel += "detail," + Detail + ",";
+            }
+            if (Title != null)
+            {
+                serializedModel += "title," + Title;
+            }
+            return serializedModel;
+        }
+
+        /// <summary>
+        /// Returns a ErrorResponseBody as a dictionary of key-value pairs for use as a query parameter.
+        /// </summary>
+        /// <returns>Returns a dictionary of string key-value pairs.</returns>
+        internal Dictionary<string, string> GetAsQueryParam()
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            var statusStringValue = Status.ToString();
+            dictionary.Add("status", statusStringValue);
+            
+            if (Detail != null)
+            {
+                var detailStringValue = Detail.ToString();
+                dictionary.Add("detail", detailStringValue);
+            }
+            
+            if (Title != null)
+            {
+                var titleStringValue = Title.ToString();
+                dictionary.Add("title", titleStringValue);
+            }
+            
+            return dictionary;
+        }
     }
 }
-

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Unity.Services.Multiplay;
+using Unity.Services.Multiplay.Apis.GameServer;
+using Unity.Services.Multiplay.Apis.Payload;
 using Unity.Services.Multiplay.Http;
 using Unity.Ucg.Usqp;
 using UnityEngine;
@@ -27,6 +29,21 @@ namespace Unity.Services.Multiplay.Internal
             // This is intended! MultiplayService is not currently usable without a server.json,
             // so a call to MultiplayService.Instance without a server.json will throw!
             ServerConfig = serviceSdk.ServerConfigReader.LoadServerConfig();
+
+            //Overwrite localhost to 127.0.0.1:8086 as Multiplay doesn't connect otherwise
+            Configuration config = new Configuration("http://127.0.0.1:8086", 10, 4, null);
+            var gameServerClient = serviceSdk.GameServerApi as GameServerApiClient;
+            var payloadClient = serviceSdk.PayloadApi as PayloadApiClient;
+
+            if (gameServerClient != null)
+            {
+                gameServerClient.Configuration = config;
+            }
+
+            if (payloadClient != null)
+            {
+                payloadClient.Configuration = config;
+            }
         }
 
         public async Task ReadyServerForPlayersAsync()

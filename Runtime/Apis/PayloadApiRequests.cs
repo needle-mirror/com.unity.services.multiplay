@@ -19,6 +19,7 @@ using UnityEngine.Networking;
 using UnityEngine.Scripting;
 using Unity.Services.Multiplay.Models;
 using Unity.Services.Multiplay.Scheduler;
+using Unity.Services.Multiplay.Http;
 using Unity.Services.Authentication.Internal;
 
 namespace Unity.Services.Multiplay.Payload
@@ -32,7 +33,7 @@ namespace Unity.Services.Multiplay.Payload
 
         public static string SerializeToString<T>(T obj)
         {
-            return JsonConvert.SerializeObject(obj);
+            return IsolatedJsonConvert.SerializeObject(obj, new JsonSerializerSettings{ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore});
         }
     }
 
@@ -91,6 +92,25 @@ namespace Unity.Services.Multiplay.Payload
                 }
                 paramString = paramString.Remove(paramString.Length - 1);
                 queryParams.Add(paramString);
+            }
+
+            return queryParams;
+        }
+
+        /// <summary>
+        /// Helper function to add a provided map of keys and values, representing a model, to the
+        /// provided query params.
+        /// </summary>
+        /// <param name="queryParams">A `List/<string/>` of the query parameters.</param>
+        /// <param name="modelVars">A `Dictionary` representing the vars of the model</param>
+        /// <returns>Returns a `List/<string/>`</returns>
+        [Preserve]
+        public List<string> AddParamsToQueryParams(List<string> queryParams, Dictionary<string, string> modelVars)
+        {
+            foreach(var key in modelVars.Keys)
+            {
+                string escapedValue = UnityWebRequest.EscapeURL(modelVars[key]);
+                queryParams.Add($"{UnityWebRequest.EscapeURL(key)}={escapedValue}");
             }
 
             return queryParams;
@@ -258,7 +278,6 @@ namespace Unity.Services.Multiplay.Payload
     {
         /// <summary>Accessor for allocationId </summary>
         [Preserve]
-        
         public System.Guid AllocationId { get; }
         string PathAndQueryParams;
 
@@ -270,18 +289,11 @@ namespace Unity.Services.Multiplay.Payload
         [Preserve]
         public PayloadAllocationRequest(System.Guid allocationId)
         {
-            
             AllocationId = allocationId;
-
 
             PathAndQueryParams = $"/payload/{allocationId}";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -373,16 +385,9 @@ namespace Unity.Services.Multiplay.Payload
         [Preserve]
         public PayloadTokenRequest()
         {
-
-
             PathAndQueryParams = $"/token";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>

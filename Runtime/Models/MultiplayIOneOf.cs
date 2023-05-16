@@ -15,7 +15,7 @@ namespace Unity.Services.Multiplay.Models
     /// <summary>
     /// Interface to a result that could be one of many possible types.
     /// </summary>
-    public interface IOneOf
+    internal interface IOneOf
     {
         /// <summary>The type of the value.</summary>
         Type Type { get; }

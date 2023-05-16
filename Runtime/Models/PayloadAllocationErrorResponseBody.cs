@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Scripting;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -25,7 +26,7 @@ namespace Unity.Services.Multiplay.Models
     /// </summary>
     [Preserve]
     [DataContract(Name = "PayloadAllocationErrorResponseBody")]
-    public class PayloadAllocationErrorResponseBody
+    internal class PayloadAllocationErrorResponseBody
     {
         /// <summary>
         /// Creates an instance of PayloadAllocationErrorResponseBody.
@@ -49,18 +50,21 @@ namespace Unity.Services.Multiplay.Models
         [Preserve]
         [DataMember(Name = "success", IsRequired = true, EmitDefaultValue = true)]
         public bool Success{ get; }
+        
         /// <summary>
         /// there exists an error
         /// </summary>
         [Preserve]
         [DataMember(Name = "error", IsRequired = true, EmitDefaultValue = true)]
         public bool Error{ get; }
+        
         /// <summary>
         /// code of the error
         /// </summary>
         [Preserve]
         [DataMember(Name = "error_code", IsRequired = true, EmitDefaultValue = true)]
         public int ErrorCode{ get; }
+        
         /// <summary>
         /// a message describing the error
         /// </summary>
@@ -68,6 +72,48 @@ namespace Unity.Services.Multiplay.Models
         [DataMember(Name = "error_message", IsRequired = true, EmitDefaultValue = true)]
         public string ErrorMessage{ get; }
     
+        /// <summary>
+        /// Formats a PayloadAllocationErrorResponseBody into a string of key-value pairs for use as a path parameter.
+        /// </summary>
+        /// <returns>Returns a string representation of the key-value pairs.</returns>
+        internal string SerializeAsPathParam()
+        {
+            var serializedModel = "";
+
+            serializedModel += "success," + Success.ToString() + ",";
+            serializedModel += "error," + Error.ToString() + ",";
+            serializedModel += "error_code," + ErrorCode.ToString() + ",";
+            if (ErrorMessage != null)
+            {
+                serializedModel += "error_message," + ErrorMessage;
+            }
+            return serializedModel;
+        }
+
+        /// <summary>
+        /// Returns a PayloadAllocationErrorResponseBody as a dictionary of key-value pairs for use as a query parameter.
+        /// </summary>
+        /// <returns>Returns a dictionary of string key-value pairs.</returns>
+        internal Dictionary<string, string> GetAsQueryParam()
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            var successStringValue = Success.ToString();
+            dictionary.Add("success", successStringValue);
+            
+            var errorStringValue = Error.ToString();
+            dictionary.Add("error", errorStringValue);
+            
+            var error_codeStringValue = ErrorCode.ToString();
+            dictionary.Add("error_code", error_codeStringValue);
+            
+            if (ErrorMessage != null)
+            {
+                var error_messageStringValue = ErrorMessage.ToString();
+                dictionary.Add("error_message", error_messageStringValue);
+            }
+            
+            return dictionary;
+        }
     }
 }
-

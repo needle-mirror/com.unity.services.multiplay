@@ -28,9 +28,9 @@ namespace Unity.Services.Multiplay.Apis.GameServer
             /// </summary>
             /// <param name="request">Request object for ReadyServer.</param>
             /// <param name="operationConfiguration">Configuration for ReadyServer.</param>
-            /// <returns>Task for a Response object containing status code, headers, and JsonObject object.</returns>
+            /// <returns>Task for a Response object containing status code, headers, and IDeserializable object.</returns>
             /// <exception cref="Unity.Services.Multiplay.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-            Task<Response<JsonObject>> ReadyServerAsync(Unity.Services.Multiplay.GameServer.ReadyServerRequest request, Configuration operationConfiguration = null);
+            Task<Response<IDeserializable>> ReadyServerAsync(Unity.Services.Multiplay.GameServer.ReadyServerRequest request, Configuration operationConfiguration = null);
 
             /// <summary>
             /// Async Operation.
@@ -44,13 +44,13 @@ namespace Unity.Services.Multiplay.Apis.GameServer
 
             /// <summary>
             /// Async Operation.
-            /// Indicates a server is not ready to receive allocations.
+            /// Indicates a server is not ready to receive players.
             /// </summary>
             /// <param name="request">Request object for UnreadyServer.</param>
             /// <param name="operationConfiguration">Configuration for UnreadyServer.</param>
-            /// <returns>Task for a Response object containing status code, headers, and JsonObject object.</returns>
+            /// <returns>Task for a Response object containing status code, headers, and IDeserializable object.</returns>
             /// <exception cref="Unity.Services.Multiplay.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-            Task<Response<JsonObject>> UnreadyServerAsync(Unity.Services.Multiplay.GameServer.UnreadyServerRequest request, Configuration operationConfiguration = null);
+            Task<Response<IDeserializable>> UnreadyServerAsync(Unity.Services.Multiplay.GameServer.UnreadyServerRequest request, Configuration operationConfiguration = null);
 
     }
 
@@ -72,13 +72,10 @@ namespace Unity.Services.Multiplay.Apis.GameServer
                 // We return a merge between the current configuration and the
                 // global configuration to ensure we have the correct
                 // combination of headers and a base path (if it is set).
-                Configuration globalConfiguration = new Configuration("http://127.0.0.1:8086", 10, 4, null);
-                if (MultiplayServiceSdk.Instance != null)
-                {
-                    globalConfiguration = MultiplayServiceSdk.Instance.Configuration;
-                }
+                Configuration globalConfiguration = new Configuration("http://localhost", 10, 4, null);
                 return Configuration.MergeConfigurations(_configuration, globalConfiguration);
             }
+            set { _configuration = value; }
         }
 
         /// <summary>
@@ -105,12 +102,12 @@ namespace Unity.Services.Multiplay.Apis.GameServer
         /// </summary>
         /// <param name="request">Request object for ReadyServer.</param>
         /// <param name="operationConfiguration">Configuration for ReadyServer.</param>
-        /// <returns>Task for a Response object containing status code, headers, and JsonObject object.</returns>
+        /// <returns>Task for a Response object containing status code, headers, and object object.</returns>
         /// <exception cref="Unity.Services.Multiplay.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-        public async Task<Response<JsonObject>> ReadyServerAsync(Unity.Services.Multiplay.GameServer.ReadyServerRequest request,
+        public async Task<Response<IDeserializable>> ReadyServerAsync(Unity.Services.Multiplay.GameServer.ReadyServerRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(JsonObject)   },{"404", typeof(Models.ErrorResponseBody)   },{"500", typeof(Models.ErrorResponseBody)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(IDeserializable)   },{"404", typeof(Models.ErrorResponseBody)   },{"500", typeof(Models.ErrorResponseBody)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -121,8 +118,8 @@ namespace Unity.Services.Multiplay.Apis.GameServer
                 request.ConstructHeaders(_accessToken, finalConfiguration),
                 finalConfiguration.RequestTimeout ?? _baseTimeout);
 
-            var handledResponse = ResponseHandler.HandleAsyncResponse<JsonObject>(response, statusCodeToTypeMap);
-            return new Response<JsonObject>(response, handledResponse);
+            var handledResponse = ResponseHandler.HandleAsyncResponse<IDeserializable>(response, statusCodeToTypeMap);
+            return new Response<IDeserializable>(response, handledResponse);
         }
 
 
@@ -155,16 +152,16 @@ namespace Unity.Services.Multiplay.Apis.GameServer
 
         /// <summary>
         /// Async Operation.
-        /// Indicates a server is not ready to receive allocations.
+        /// Indicates a server is not ready to receive players.
         /// </summary>
         /// <param name="request">Request object for UnreadyServer.</param>
         /// <param name="operationConfiguration">Configuration for UnreadyServer.</param>
-        /// <returns>Task for a Response object containing status code, headers, and JsonObject object.</returns>
+        /// <returns>Task for a Response object containing status code, headers, and object object.</returns>
         /// <exception cref="Unity.Services.Multiplay.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-        public async Task<Response<JsonObject>> UnreadyServerAsync(Unity.Services.Multiplay.GameServer.UnreadyServerRequest request,
+        public async Task<Response<IDeserializable>> UnreadyServerAsync(Unity.Services.Multiplay.GameServer.UnreadyServerRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(JsonObject)   },{"404", typeof(Models.ErrorResponseBody)   },{"500", typeof(Models.ErrorResponseBody)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(IDeserializable)   },{"404", typeof(Models.ErrorResponseBody)   },{"500", typeof(Models.ErrorResponseBody)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -175,8 +172,8 @@ namespace Unity.Services.Multiplay.Apis.GameServer
                 request.ConstructHeaders(_accessToken, finalConfiguration),
                 finalConfiguration.RequestTimeout ?? _baseTimeout);
 
-            var handledResponse = ResponseHandler.HandleAsyncResponse<JsonObject>(response, statusCodeToTypeMap);
-            return new Response<JsonObject>(response, handledResponse);
+            var handledResponse = ResponseHandler.HandleAsyncResponse<IDeserializable>(response, statusCodeToTypeMap);
+            return new Response<IDeserializable>(response, handledResponse);
         }
 
     }

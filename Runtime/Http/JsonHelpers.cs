@@ -37,9 +37,10 @@ namespace Unity.Services.Multiplay.Http
                     success = false;
                     args.ErrorContext.Handled = true;
                 },
-                MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Ignore
+                MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Ignore,
+                ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             };
-            result = JsonConvert.DeserializeObject<T>(@this, settings);
+            result = IsolatedJsonConvert.DeserializeObject<T>(@this, settings);
             return success;
         }
     }

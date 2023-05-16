@@ -19,6 +19,7 @@ using UnityEngine.Networking;
 using UnityEngine.Scripting;
 using Unity.Services.Multiplay.Models;
 using Unity.Services.Multiplay.Scheduler;
+using Unity.Services.Multiplay.Http;
 using Unity.Services.Authentication.Internal;
 
 namespace Unity.Services.Multiplay.GameServer
@@ -32,7 +33,7 @@ namespace Unity.Services.Multiplay.GameServer
 
         public static string SerializeToString<T>(T obj)
         {
-            return JsonConvert.SerializeObject(obj);
+            return IsolatedJsonConvert.SerializeObject(obj, new JsonSerializerSettings{ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore});
         }
     }
 
@@ -91,6 +92,25 @@ namespace Unity.Services.Multiplay.GameServer
                 }
                 paramString = paramString.Remove(paramString.Length - 1);
                 queryParams.Add(paramString);
+            }
+
+            return queryParams;
+        }
+
+        /// <summary>
+        /// Helper function to add a provided map of keys and values, representing a model, to the
+        /// provided query params.
+        /// </summary>
+        /// <param name="queryParams">A `List/<string/>` of the query parameters.</param>
+        /// <param name="modelVars">A `Dictionary` representing the vars of the model</param>
+        /// <returns>Returns a `List/<string/>`</returns>
+        [Preserve]
+        public List<string> AddParamsToQueryParams(List<string> queryParams, Dictionary<string, string> modelVars)
+        {
+            foreach(var key in modelVars.Keys)
+            {
+                string escapedValue = UnityWebRequest.EscapeURL(modelVars[key]);
+                queryParams.Add($"{UnityWebRequest.EscapeURL(key)}={escapedValue}");
             }
 
             return queryParams;
@@ -258,11 +278,9 @@ namespace Unity.Services.Multiplay.GameServer
     {
         /// <summary>Accessor for serverId </summary>
         [Preserve]
-        
         public long ServerId { get; }
         /// <summary>Accessor for allocationId </summary>
         [Preserve]
-        
         public System.Guid AllocationId { get; }
         string PathAndQueryParams;
 
@@ -275,20 +293,13 @@ namespace Unity.Services.Multiplay.GameServer
         [Preserve]
         public ReadyServerRequest(long serverId, System.Guid allocationId)
         {
-            
             ServerId = serverId;
-            
-            AllocationId = allocationId;
 
+            AllocationId = allocationId;
 
             PathAndQueryParams = $"/v1/server/{serverId}/allocation/{allocationId}/ready-for-players";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -371,44 +382,28 @@ namespace Unity.Services.Multiplay.GameServer
     [Preserve]
     internal class SubscribeServerRequest : GameServerApiBaseRequest
     {
-        /// <summary>Accessor for serverId </summary>
-        [Preserve]
-        
-        public long ServerId { get; }
         /// <summary>Accessor for connection </summary>
         [Preserve]
         public string Connection { get; }
-        
         /// <summary>Accessor for upgrade </summary>
         [Preserve]
         public string Upgrade { get; }
-        
         string PathAndQueryParams;
 
         /// <summary>
         /// SubscribeServer Request Object.
         /// Subscribe to game server lifecycle events
         /// </summary>
-        /// <param name="serverId">ID of the game server</param>
         /// <param name="connection">Controls whether the network connection stays open after the current transaction finishes.</param>
         /// <param name="upgrade">Used to upgrade an already established client/server connection to a different protocol</param>
         [Preserve]
-        public SubscribeServerRequest(long serverId, string connection, string upgrade)
+        public SubscribeServerRequest(string connection, string upgrade)
         {
-            
-            ServerId = serverId;
             Connection = connection;
-                        Upgrade = upgrade;
-            
+            Upgrade = upgrade;
+            PathAndQueryParams = $"/v1/connection/websocket";
 
-            PathAndQueryParams = $"/v1/subscribe/{serverId}";
 
-            List<string> queryParams = new List<string>();
-
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -493,37 +488,29 @@ namespace Unity.Services.Multiplay.GameServer
     }
     /// <summary>
     /// UnreadyServerRequest
-    /// Indicates a server is not ready to receive allocations
+    /// Indicates a server is not ready to receive players
     /// </summary>
     [Preserve]
     internal class UnreadyServerRequest : GameServerApiBaseRequest
     {
         /// <summary>Accessor for serverId </summary>
         [Preserve]
-        
         public long ServerId { get; }
         string PathAndQueryParams;
 
         /// <summary>
         /// UnreadyServer Request Object.
-        /// Indicates a server is not ready to receive allocations
+        /// Indicates a server is not ready to receive players
         /// </summary>
         /// <param name="serverId">ID of the game server</param>
         [Preserve]
         public UnreadyServerRequest(long serverId)
         {
-            
             ServerId = serverId;
-
 
             PathAndQueryParams = $"/v1/server/{serverId}/unready";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>

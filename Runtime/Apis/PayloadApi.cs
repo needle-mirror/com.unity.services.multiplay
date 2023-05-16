@@ -14,7 +14,6 @@ using Unity.Services.Multiplay.Models;
 using Unity.Services.Multiplay.Http;
 using Unity.Services.Authentication.Internal;
 using Unity.Services.Multiplay.Payload;
-using System.Text;
 
 namespace Unity.Services.Multiplay.Apis.Payload
 {
@@ -63,11 +62,7 @@ namespace Unity.Services.Multiplay.Apis.Payload
                 // We return a merge between the current configuration and the
                 // global configuration to ensure we have the correct
                 // combination of headers and a base path (if it is set).
-                Configuration globalConfiguration = new Configuration("http://127.0.0.1:8086", 10, 4, null);
-                if (MultiplayServiceSdk.Instance != null)
-                {
-                    globalConfiguration = MultiplayServiceSdk.Instance.Configuration;
-                }
+                Configuration globalConfiguration = new Configuration("http://localhost", 10, 4, null);
                 return Configuration.MergeConfigurations(_configuration, globalConfiguration);
             }
             set { _configuration = value; }
@@ -113,8 +108,7 @@ namespace Unity.Services.Multiplay.Apis.Payload
                 request.ConstructHeaders(_accessToken, finalConfiguration),
                 finalConfiguration.RequestTimeout ?? _baseTimeout);
 
-            ResponseHandler.HandleAsyncResponse(response, statusCodeToTypeMap);
-            var handledResponse = Encoding.UTF8.GetString(response.Data);
+            var handledResponse = ResponseHandler.HandleAsyncResponse<string>(response, statusCodeToTypeMap);
             return new Response<string>(response, handledResponse);
         }
 
