@@ -151,40 +151,10 @@ namespace Unity.Services.Multiplay
 
 namespace Unity.Services.Multiplay.Models
 {
-    [System.Runtime.Serialization.DataContract(Name = @"ErrorResponseBody")] [UnityEngine.Scripting.Preserve] public class ErrorResponseBody
-    {
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"detail")] [UnityEngine.Scripting.Preserve] public string Detail { get; }
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"status")] [UnityEngine.Scripting.Preserve] public int Status { get; }
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"title")] [UnityEngine.Scripting.Preserve] public string Title { get; }
-        [UnityEngine.Scripting.Preserve] public ErrorResponseBody(int status, string detail, string title) {}
-    }
-
-    public interface IOneOf
-    {
-        public System.Type Type { get; }
-        public object Value { get; }
-    }
-
     [System.Runtime.Serialization.DataContract(Name = @"KeyValuePair")] [UnityEngine.Scripting.Preserve] public class KeyValuePair
     {
         [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"key")] [UnityEngine.Scripting.Preserve] public string Key { get; }
         [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"value")] [UnityEngine.Scripting.Preserve] public string Value { get; }
         [UnityEngine.Scripting.Preserve] public KeyValuePair(string key, string value) {}
-    }
-
-    [System.Runtime.Serialization.DataContract(Name = @"PayloadAllocationErrorResponseBody")] [UnityEngine.Scripting.Preserve] public class PayloadAllocationErrorResponseBody
-    {
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"error")] [UnityEngine.Scripting.Preserve] public bool Error { get; }
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"error_code")] [UnityEngine.Scripting.Preserve] public int ErrorCode { get; }
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"error_message")] [UnityEngine.Scripting.Preserve] public string ErrorMessage { get; }
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"success")] [UnityEngine.Scripting.Preserve] public bool Success { get; }
-        [UnityEngine.Scripting.Preserve] public PayloadAllocationErrorResponseBody(bool success, bool error, int errorCode, string errorMessage) {}
-    }
-
-    [System.Runtime.Serialization.DataContract(Name = @"PayloadTokenResponseBody")] [UnityEngine.Scripting.Preserve] public class PayloadTokenResponseBody
-    {
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"error")] [UnityEngine.Scripting.Preserve] public string Error { get; }
-        [System.Runtime.Serialization.DataMember(EmitDefaultValue = true, IsRequired = true, Name = @"token")] [UnityEngine.Scripting.Preserve] public string Token { get; }
-        [UnityEngine.Scripting.Preserve] public PayloadTokenResponseBody(string token, string error) {}
     }
 }

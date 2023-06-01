@@ -14,7 +14,6 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using Unity.Services.Multiplay.Models;
-using UnityEngine;
 
 namespace Unity.Services.Multiplay.Http
 {
@@ -88,12 +87,7 @@ namespace Unity.Services.Multiplay.Http
 
         private static string GetDeserializedJson(byte[] data)
         {
-            if (data == null)
-            {
-                return string.Empty;
-            }
-
-            return Encoding.UTF8.GetString(data);
+            return data == null ? null : Encoding.UTF8.GetString(data);
         }
 
         /// <summary>
@@ -233,7 +227,11 @@ namespace Unity.Services.Multiplay.Http
 
             try
             {
-                if (statusCodeToTypeMap[response.StatusCode.ToString()] == typeof(System.IO.Stream))
+                if (statusCodeToTypeMap[response.StatusCode.ToString()] == typeof(string))
+                {
+                    return (response.Data == null ? null : Encoding.UTF8.GetString(response.Data)) as T;
+                }                        
+                else if (statusCodeToTypeMap[response.StatusCode.ToString()] == typeof(System.IO.Stream))
                 {
                     return (response.Data == null ? new MemoryStream() : new MemoryStream(response.Data)) as T;
                 }

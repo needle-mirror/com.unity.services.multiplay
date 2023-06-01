@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.multiplay",
   "displayName": "Multiplay",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "unity": "2020.3",
   "description": "The Multiplay SDK provides functionality to facilitate Multiplay services.",
   "_upm": {
@@ -11,7 +11,7 @@
       "projectDashboardUrlType": "OrganizationKeyAndProjectGuid",
       "useCasesUrl": "https://docs.unity.com/multiplay/shared/welcome-to-multiplay.html"
     },
-    "changelog": "* Bugfix: Newtonsoft Json Default Settings no longer override SDK serialization behaviour."
+    "changelog": "* Bugfix: Fixed an issue where deserializing a payload allocation was throwing an exception when used with Matchmaker."
   },
   "dependencies": {
     "com.unity.services.core": "1.8.2",
@@ -24,15 +24,15 @@
     "com.unity.nuget.newtonsoft-json": "3.0.2"
   },
   "relatedPackages": {
-    "com.unity.services.multiplay.tests": "1.0.3"
+    "com.unity.services.multiplay.tests": "1.0.4"
   },
   "upmCi": {
-    "footprint": "6e69ab74903ae20d1f627b59aab53791a5a2bc6c"
+    "footprint": "56feff13482272932d99521ec21ed4accce679df"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.multiplay@1.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "4fb825780c563e7744ca1a865f01d80069a2cadb"
+    "revision": "226f550e30d48e9c813b07df79709b347e098b71"
   }
 }
