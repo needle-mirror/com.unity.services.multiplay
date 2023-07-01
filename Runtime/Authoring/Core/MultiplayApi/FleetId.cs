@@ -2,10 +2,14 @@ using System;
 
 namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
-    struct FleetId
+    /// <summary>
+    /// Represents a type-safe Fleet ID
+    /// </summary>
+    public struct FleetId
     {
-        public Guid Id { private get; init; }
-
-        public Guid ToGuid() => Id;
+        /// <summary>
+        /// The numerical value of the Fleet
+        /// </summary>
+        public Guid Guid { get; init; }
     }
 }

@@ -11,21 +11,35 @@ using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 
 namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 {
-    class MultiplayDeployer
+    /// <summary>
+    /// Multiplay Deployer can deploy multiplay configuration items.
+    /// </summary>
+    class MultiplayDeployer : IMultiplayDeployer
     {
-        readonly IDeploymentFacadeFactory m_DeploymentFacadeFactory;
         IDeploymentFacade m_Deployment;
 
-        public MultiplayDeployer(IDeploymentFacadeFactory deploymentDeploymentFacadeFactory)
+        /// <summary>
+        /// Create an instance of MultiplayDeployer
+        /// </summary>
+        public MultiplayDeployer(IDeploymentFacade deployment)
         {
-            m_DeploymentFacadeFactory = deploymentDeploymentFacadeFactory;
+            m_Deployment = deployment;
         }
 
+        /// <summary>
+        /// Initialize the MultiplayDeployer with an authenticated client
+        /// </summary>
         public async Task InitAsync()
         {
-            m_Deployment = await m_DeploymentFacadeFactory.BuildAsync();
+            await m_Deployment.InitAsync();
         }
 
+        /// <summary>
+        /// Deploy the associated Multiplay Config items.
+        /// Builds will be built and uploaded, Build Configurations and fleets will
+        /// be created or updated according to the item.
+        /// The item status and progress will be updated along the way.
+        /// </summary>
         public async Task Deploy(IReadOnlyList<DeploymentItem> items, CancellationToken token = default)
         {
             SetupStatuses(items);
@@ -41,9 +55,12 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                 = await DeployBuildConfigs(buildConfigs, uploadResult.SuccessfulSyncs, token);
 
             fleets = FilterFleets(fleets, failedBuildConfigs);
-            await DeployFleets(fleets, token, buildConfigIds);
+            await DeployFleets(fleets, buildConfigIds, token);
         }
 
+        /// <summary>
+        /// Build the binaries associated with the build items
+        /// </summary>
         public async Task<(List<BuildItem>, List<BuildItem>)> BuildBinaries(
             IReadOnlyList<BuildItem> buildItems,
             CancellationToken token = default)
@@ -51,14 +68,17 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return await CreateBuildBinaries(buildItems, token);
         }
 
-        public async Task<UploadResult> UploadAndSyncBuilds(
+        /// <summary>
+        /// Uploads the associated builds, and waits for them to be available.
+        /// </summary>
+        public async Task<IMultiplayDeployer.UploadResult> UploadAndSyncBuilds(
             List<BuildItem> successfulBuilds,
             CancellationToken token = default)
         {
             var(uploadResults, failedUploads) = await UploadBuilds(successfulBuilds, token);
 
             var(successfulSyncs, failedSyncs) = await SyncBuilds(uploadResults, token);
-            return new UploadResult(uploadResults, failedUploads, successfulSyncs, failedSyncs);
+            return new IMultiplayDeployer.UploadResult(uploadResults, failedUploads, successfulSyncs, failedSyncs);
         }
 
         async Task<(List<BuildItem>, List<BuildItem>)> CreateBuildBinaries(
@@ -115,6 +135,15 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                     uploadResults.Add(buildItem, uploadResult);
                     buildItem.Progress = 66f;
                 }
+                catch (MultiplayAuthoringException e)
+                {
+                    var status = new DeploymentStatus(
+                        $"Failed to Upload build: {e.Message}.",
+                        "Please make sure you have enable game server hosting in the dashboard.",
+                        SeverityLevel.Error);
+                    buildItem.Status = status;
+                    failedUploads.Add(buildItem);
+                }
                 catch (Exception e)
                 {
                     buildItem.Status = DeploymentStatus.FailedToDeploy;
@@ -136,21 +165,20 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             {
                 try
                 {
-                    if (uploadResult.Changes != 0)
-                    {
-                        var syncComplete = await m_Deployment.SyncBuildAsync(
-                            buildItem,
-                            uploadResult.BuildId,
-                            uploadResult.CloudBucketId,
-                            token);
+                    bool createNewVersion = uploadResult.Changes != 0;
+                    var syncComplete = await m_Deployment.SyncBuildAsync(
+                        createNewVersion,
+                        buildItem,
+                        uploadResult.BuildId,
+                        uploadResult.CloudBucketId,
+                        token);
 
-                        if (!syncComplete)
-                        {
-                            buildItem.Status = DeploymentStatus.FailedToDeploy;
-                            buildItem.SetStatusDescription($"Failed to synchronize Build in the allocated time.");
-                            failedSyncs.Add(buildItem);
-                            continue;
-                        }
+                    if (!syncComplete)
+                    {
+                        buildItem.Status = DeploymentStatus.FailedToDeploy;
+                        buildItem.SetStatusDescription($"Failed to synchronize Build in the allocated time.");
+                        failedSyncs.Add(buildItem);
+                        continue;
                     }
 
                     successSyncs.Add(buildItem.OriginalName, uploadResult.BuildId);
@@ -168,6 +196,9 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return (successSyncs, failedSyncs);
         }
 
+        /// <summary>
+        /// Creates or Updates the associated build configurations
+        /// </summary>
         public async Task<(Dictionary<BuildConfigurationName, BuildConfigurationId>, List<BuildConfigurationItem>)> DeployBuildConfigs(
             IReadOnlyList<BuildConfigurationItem> items,
             Dictionary<BuildName, BuildId> successfulUploads,
@@ -226,14 +257,15 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 
         public async Task DeployFleets(
             IReadOnlyList<FleetItem> items,
-            CancellationToken token,
-            Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds)
+            Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds = null,
+            CancellationToken token = default)
         {
+            buildConfigIds ??= new Dictionary<BuildConfigurationName, BuildConfigurationId>();
             foreach (var fleet in items)
             {
                 try
                 {
-                    List<BuildConfigurationId> ids = new List<BuildConfigurationId>();
+                    var ids = new List<BuildConfigurationId>();
                     foreach (var configuration in fleet.Definition.BuildConfigurations)
                     {
                         if (!buildConfigIds.ContainsKey(configuration))
@@ -242,9 +274,9 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                                 configuration,
                                 await m_Deployment.FindBuildConfigAsync(configuration, token));
                         }
-
-                        ids = fleet.Definition.BuildConfigurations.Select(c => buildConfigIds[c]).ToList();
                     }
+
+                    ids = fleet.Definition.BuildConfigurations.Select(c => buildConfigIds[c]).ToList();
 
                     await m_Deployment.DeployFleetAsync(
                         fleet.OriginalName,
@@ -313,6 +345,39 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                     item.SetStatusDetail(message);
                 }
             }
+        }
+
+        public Task<AllocationInformation> CreateAndSyncTestAllocationAsync(
+            FleetName fleetName,
+            BuildConfigurationName buildConfigurationName,
+            CancellationToken cancellationToken = default)
+        {
+            return m_Deployment.CreateAndSyncTestAllocationAsync(fleetName, buildConfigurationName, cancellationToken);
+        }
+
+        public Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default)
+        {
+            return m_Deployment.ListTestAllocations(fleetId, cancellationToken);
+        }
+
+        public Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken cancellationToken = default)
+        {
+            return m_Deployment.RemoveTestAllocation(fleetId, allocationId, cancellationToken);
+        }
+
+        public Task<Dictionary<string, Guid>> GetAvailableRegions()
+        {
+            return m_Deployment.GetAvailableRegions();
+        }
+
+        public Task DeleteFleet(FleetId fleetId)
+        {
+            return m_Deployment.DeleteFleet(fleetId);
+        }
+
+        public Task<IReadOnlyList<FleetInfo>> GetFleets()
+        {
+            return m_Deployment.GetFleets();
         }
 
         List<BuildConfigurationItem> FilterBuildConfigs(
@@ -395,11 +460,5 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 
             return true;
         }
-
-        public record UploadResult(
-            Dictionary<BuildItem, BuildUploadResult> UploadResults,
-            List<BuildItem> FailedUploads,
-            Dictionary<BuildName, BuildId> SuccessfulSyncs,
-            List<BuildItem> FailedSyncs);
     }
 }

@@ -6,7 +6,7 @@ using Unity.Services.Multiplay.Authoring.Core.Assets;
 
 namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
-    interface IFleetApi
+    interface IFleetApi : IInitializable
     {
         Task<FleetInfo> FindByName(string name, CancellationToken cancellationToken = default);
         Task<FleetInfo> Create(string name,
@@ -22,5 +22,9 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
             CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<FleetInfo>> List(CancellationToken cancellationToken = default);
+
+        Task<Dictionary<string, Guid>> GetRegions();
+
+        Task DeleteFleet(FleetId fleetId);
     }
 }

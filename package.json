@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.multiplay",
   "displayName": "Multiplay",
-  "version": "1.2.2",
+  "version": "1.2.1-exp.7",
   "unity": "2020.3",
   "description": "The Multiplay SDK provides functionality to facilitate Multiplay services.",
   "_upm": {
@@ -11,7 +11,7 @@
       "projectDashboardUrlType": "OrganizationKeyAndProjectGuid",
       "useCasesUrl": "https://docs.unity.com/multiplay/shared/welcome-to-multiplay.html"
     },
-    "changelog": "* Updated content of apple privacy manifest"
+    "changelog": "* Added API to interact with Admin API\n* Added API to interact with deployment capabilities\n* Fix issue where gsh deploy upload may fail in some cases\n  * A partial upload would not be retried and a subsequent build version would fail to be created\n* Fix with the upload command. It would not wait for sync if there was nothing to do."
   },
   "dependencies": {
     "com.unity.services.core": "1.12.5",
@@ -24,15 +24,15 @@
     "com.unity.nuget.newtonsoft-json": "3.0.2"
   },
   "relatedPackages": {
-    "com.unity.services.multiplay.tests": "1.2.2"
+    "com.unity.services.multiplay.tests": "1.2.1-exp.7"
   },
   "upmCi": {
-    "footprint": "93de51c324712cea4e8271841b6b62668ed8bfa2"
+    "footprint": "b07242844130a92229070fdbfe6412d1e12589b6"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.multiplay@1.2/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "11611c9c920d429bbb0310758976af4f03adcfcc"
+    "revision": "ce2b2231cde05c2c4a8051edb5794cfb3d048211"
   }
 }
