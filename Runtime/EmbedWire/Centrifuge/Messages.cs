@@ -41,7 +41,7 @@ namespace Unity.Services.Wire.Internal
         }
         public string Serialize()
         {
-            string data = JsonConvert.SerializeObject(this);
+            string data = JsonConvert.SerializeObject(this, settings: null);
             Logger.LogVerbose($"serializing message: {data}");
             return data;
         }

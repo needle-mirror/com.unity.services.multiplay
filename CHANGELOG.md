@@ -5,6 +5,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2023-10-30
+* Added support for editor authoring of Game Server Hosting files.
+
 ## [1.0.5] - 2023-06-22
 * Bugfix: Fixed an issue where editors above 2020.3 were having deserialization errors on ReadyServerForPlayersAsync calls.
 
