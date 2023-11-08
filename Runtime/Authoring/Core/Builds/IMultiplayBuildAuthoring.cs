@@ -7,6 +7,6 @@ namespace Unity.Services.Multiplay.Authoring.Core
     {
         string BuildMultiplayServer(string directory, string executableName);
 
-        void RevertToOriginalBuildTarget();
+        void WarnBuildTargetChanged();
     }
 }

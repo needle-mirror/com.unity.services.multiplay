@@ -43,7 +43,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 new BuildConfigurationCreateRequest(
                     name,
                     buildId.ToLong(),
-                    definition.QueryType.ToString(),
+                    definition.QueryType.ToString().ToLower(),
                     definition.BinaryPath,
                     definition.CommandLine,
                     definition.Cores,
@@ -68,7 +68,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                     name,
                     buildId.ToLong(),
                     definition.Variables.Select(kv => new ConfigurationPair1(0, kv.Key, kv.Value)).ToList(),
-                    definition.QueryType.ToString(),
+                    definition.QueryType.ToString().ToLower(),
                     definition.BinaryPath,
                     definition.CommandLine,
                     definition.Cores,

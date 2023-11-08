@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.DeploymentApi.Editor;
@@ -21,6 +22,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         readonly IBuildsApi m_BuildsApi;
         readonly IBuildConfigApi m_ConfigApi;
         readonly IFleetApi m_FleetApi;
+        readonly IAllocationApi m_AllocationApi;
         readonly IDispatchToMainThread m_Dispatcher;
         readonly ILogger m_Logger;
 
@@ -31,6 +33,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             IBuildsApi buildsApi,
             IBuildConfigApi buildConfigApi,
             IFleetApi fleetApi,
+            IAllocationApi allocationApi,
             IDispatchToMainThread dispatcher,
             ILogger logger)
         {
@@ -40,6 +43,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             m_BuildsApi = buildsApi;
             m_ConfigApi = buildConfigApi;
             m_FleetApi = fleetApi;
+            m_AllocationApi = allocationApi;
             m_Dispatcher = dispatcher;
             m_Logger = logger;
         }
@@ -53,9 +57,9 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return Task.CompletedTask;
         }
 
-        public Task RevertToOriginalBuildTargetAsync(CancellationToken cancellationToken = default)
+        public Task WarnBuildTargetChanged(CancellationToken cancellationToken = default)
         {
-            m_Builder.RevertToOriginalBuildTarget();
+            m_Builder.WarnBuildTargetChanged();
             return Task.CompletedTask;
         }
 
@@ -168,6 +172,20 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 
             await m_FleetApi.Update(fleetInfo.Id, name.ToString(), buildConfigs, definition, fleetInfo.OsId, cancellationToken);
             return fleetInfo.Id;
+        }
+
+        public async Task<AllocationInformation> CreateAndSyncTestAllocationAsync(FleetName fleetName, BuildConfigurationName buildConfigurationName, CancellationToken cancellationToken = default)
+        {
+            var fleetInfo = await m_FleetApi.FindByName(fleetName.ToString(), cancellationToken);
+            if (fleetInfo == null)
+            {
+                throw new ArgumentException($"Fleet {fleetName.ToString()} not found");
+            }
+            var buildConfigurationId = await FindBuildConfigAsync(buildConfigurationName, cancellationToken);
+            var allocationResult = await m_AllocationApi.CreateTestAllocation(fleetInfo.Id, fleetInfo.Regions.First().RegionId, buildConfigurationId.ToLong(), cancellationToken);
+
+            var allocationInformation = await m_AllocationApi.WaitForAllocation(fleetInfo.Id, allocationResult.AllocationId, cancellationToken);
+            return allocationInformation;
         }
     }
 }

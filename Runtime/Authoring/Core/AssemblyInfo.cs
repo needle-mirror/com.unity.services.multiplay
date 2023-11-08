@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Services.Cli.GameServerHosting.UnitTest")]
 [assembly: InternalsVisibleTo("InternalsVisible.DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
+[assembly: InternalsVisibleTo("Unity.DedicatedServer.DeploymentOrchestrator.Editor.MultiplayNode")]
 
 #if UNITY_INCLUDE_TESTS
 [assembly: InternalsVisibleTo("Unity.Services.Multiplay.Authoring.Tests.Editor")]

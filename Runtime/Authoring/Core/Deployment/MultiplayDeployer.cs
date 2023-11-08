@@ -95,7 +95,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
 
             if (buildItems.Any())
             {
-                await m_Deployment.RevertToOriginalBuildTargetAsync(token);
+                await m_Deployment.WarnBuildTargetChanged(token);
             }
 
             return (successfulBuilds, failedBuilds);
@@ -168,7 +168,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return (successSyncs, failedSyncs);
         }
 
-        async Task<(Dictionary<BuildConfigurationName, BuildConfigurationId>, List<BuildConfigurationItem>)> DeployBuildConfigs(
+        public async Task<(Dictionary<BuildConfigurationName, BuildConfigurationId>, List<BuildConfigurationItem>)> DeployBuildConfigs(
             IReadOnlyList<BuildConfigurationItem> items,
             Dictionary<BuildName, BuildId> successfulUploads,
             CancellationToken token)
@@ -224,7 +224,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return (buildConfigIds, failedBuildConfigs);
         }
 
-        async Task DeployFleets(
+        public async Task DeployFleets(
             IReadOnlyList<FleetItem> items,
             CancellationToken token,
             Dictionary<BuildConfigurationName, BuildConfigurationId> buildConfigIds)

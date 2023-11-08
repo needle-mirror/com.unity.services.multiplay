@@ -56,6 +56,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor
             collection.Register(Default<IBuildsApiFactory, MultiplayApiFactory>);
             collection.Register(Default<IBuildConfigApiFactory, MultiplayApiFactory>);
             collection.Register(Default<IAllocationApiFactory, MultiplayApiFactory>);
+            collection.Register(Default<IServersApiFactory, MultiplayApiFactory>);
 
             collection.Register(Default<IAccessTokens, AccessTokens>);
             collection.Register(Default<ICurrentTime, CurrentTime>);
@@ -73,7 +74,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor
 
 
             collection.Register(Default<IDispatchToMainThread, DispatcherToMainThread>);
-            collection.Register(Default<BuildsApiExtensions.ITaskDelay, BuildsApiExtensions.DefaultTaskDelay>);
+            collection.Register(Default<ITaskDelay, DefaultTaskDelay>);
             collection.Register(Default<MultiplayDeployer>);
             collection.Register(Default<IDeploymentFacadeFactory, DeploymentFacadeFactory>);
 

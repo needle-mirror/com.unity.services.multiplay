@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.multiplay",
   "displayName": "Multiplay",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "unity": "2020.3",
   "description": "The Multiplay SDK provides functionality to facilitate Multiplay services.",
   "_upm": {
@@ -11,7 +11,7 @@
       "projectDashboardUrlType": "OrganizationKeyAndProjectGuid",
       "useCasesUrl": "https://docs.unity.com/multiplay/shared/welcome-to-multiplay.html"
     },
-    "changelog": "* Added support for editor authoring of Game Server Hosting files."
+    "changelog": "* When creating a build, avoid switching target as this can cause a domain reload, instead emit a warning"
   },
   "dependencies": {
     "com.unity.services.core": "1.12.0",
@@ -24,15 +24,15 @@
     "com.unity.nuget.newtonsoft-json": "3.0.2"
   },
   "relatedPackages": {
-    "com.unity.services.multiplay.tests": "1.1.0"
+    "com.unity.services.multiplay.tests": "1.1.1"
   },
   "upmCi": {
-    "footprint": "71c2862f696d8804e0163298d39ae68c1aa5e713"
+    "footprint": "92058c8ab1f83b88c2b8d942ed2e7356c55bbd31"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.multiplay@1.1/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "011c83f0ffb1d6380d1c70fbc7c1cc7b6a133bdf"
+    "revision": "4f86ca77be62079858a3e36e64a58e594fc51dcd"
   }
 }

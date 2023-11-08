@@ -19,7 +19,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
         readonly IDispatchToMainThread m_Dispatcher;
         readonly IItemStore m_DeploymentItemStore;
         readonly IEnvironmentsApi m_EnvironmentsApi;
-        readonly BuildsApiExtensions.ITaskDelay m_TaskDelay;
+        readonly ITaskDelay m_TaskDelay;
         IFleetApi m_FleetsClient;
         Exception m_FailedToBuildClient;
 
@@ -29,7 +29,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
             IDispatchToMainThread dispatcher,
             IItemStore deploymentItemStore,
             IEnvironmentsApi environmentsApi,
-            BuildsApiExtensions.ITaskDelay taskDelay)
+            ITaskDelay taskDelay)
         {
             m_Factory = factory;
             m_Logger = logger;

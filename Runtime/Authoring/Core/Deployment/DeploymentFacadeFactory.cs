@@ -14,6 +14,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
         readonly IBuildsApiFactory m_BuildsApiFactory;
         readonly IBuildConfigApiFactory m_ConfigApiFactory;
         readonly IFleetApiFactory m_FleetApiFactory;
+        readonly IAllocationApiFactory m_AllocationApiFactory;
         readonly IDispatchToMainThread m_Dispatcher;
         readonly ILogger m_Logger;
 
@@ -24,6 +25,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             IBuildsApiFactory buildsApiFactory,
             IBuildConfigApiFactory configApiFactory,
             IFleetApiFactory fleetApiFactory,
+            IAllocationApiFactory allocationApiFactory,
             IDispatchToMainThread dispatcher,
             ILogger logger)
         {
@@ -33,6 +35,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             m_BuildsApiFactory = buildsApiFactory;
             m_ConfigApiFactory = configApiFactory;
             m_FleetApiFactory = fleetApiFactory;
+            m_AllocationApiFactory = allocationApiFactory;
             m_Dispatcher = dispatcher;
             m_Logger = logger;
         }
@@ -46,6 +49,7 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                 await m_BuildsApiFactory.Build(),
                 await m_ConfigApiFactory.Build(),
                 await m_FleetApiFactory.Build(),
+                await m_AllocationApiFactory.Build(),
                 m_Dispatcher,
                 m_Logger);
         }

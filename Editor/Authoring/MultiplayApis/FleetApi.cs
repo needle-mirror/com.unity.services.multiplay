@@ -41,6 +41,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                     fleetStatus: FromApi(resItem.Status, resItem.Name),
                     osId: resItem.OsID,
                     osName: resItem.OsName,
+                    regions: FromApi(resItem.Regions),
                     allocationStatus: FromApi(resItem.Servers)
                 ));
             }
@@ -67,7 +68,8 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 { Id = result.Id} ,
                 FromApi(result.Status, name),
                 result.OsID,
-                result.OsName);
+                result.OsName,
+                FromApi(result.Regions));
         }
 
         static FleetInfo.Status FromApi(FleetListItem.StatusOptions statusOption, string fleetName)
@@ -88,6 +90,11 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             }
         }
 
+        static List<FleetInfo.FleetRegionInfo> FromApi(List<FleetRegion> regions)
+        {
+            return regions.Select(r => new FleetInfo.FleetRegionInfo(r.RegionID, r.RegionID, r.RegionName)).ToList();
+        }
+
         public async Task<FleetInfo> Create(string name, IList<BuildConfigurationId> buildConfigurations, MultiplayConfig.FleetDefinition definition, CancellationToken cancellationToken = default)
         {
             var regions = await GetRegions();
@@ -102,17 +109,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.CreateFleetAsync(req);
             });
-            return new FleetInfo(response.Result.Name, new FleetId { Id = response.Result.Id }, FromApi(response.Result.Status, name), response.Result.OsID, response.Result.Name);
-        }
-
-        static FleetInfo.AllocationStatus FromApi(FleetListItem.ServersAlloc resItemServers)
-        {
-            return new FleetInfo.AllocationStatus(
-                resItemServers.All.Total,
-                resItemServers.All.Status.Allocated,
-                resItemServers.All.Status.Available,
-                resItemServers.All.Status.Online
-            );
+            return new FleetInfo(response.Result.Name, new FleetId { Id = response.Result.Id }, FromApi(response.Result.Status, name), response.Result.OsID, response.Result.Name, FromApi(response.Result.FleetRegions));
         }
 
         static FleetInfo.Status FromApi(Fleet.StatusOptions statusOption, string fleetName)
@@ -131,6 +128,21 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                         statusOption,
                         $"Unrecognized remote fleet status '{statusOption}' from fleet '{fleetName}'");
             }
+        }
+
+        static FleetInfo.AllocationStatus FromApi(FleetListItem.ServersAlloc resItemServers)
+        {
+            return new FleetInfo.AllocationStatus(
+                resItemServers.All.Total,
+                resItemServers.All.Status.Allocated,
+                resItemServers.All.Status.Available,
+                resItemServers.All.Status.Online
+            );
+        }
+
+        static List<FleetInfo.FleetRegionInfo> FromApi(List<FleetRegion1> regions)
+        {
+            return regions.Select(r => new FleetInfo.FleetRegionInfo(r.RegionID, r.RegionID, r.RegionName)).ToList();
         }
 
         public async Task Update(

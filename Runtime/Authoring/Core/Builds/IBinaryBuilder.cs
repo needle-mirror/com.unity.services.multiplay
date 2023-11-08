@@ -9,6 +9,6 @@ namespace Unity.Services.Multiplay.Authoring.Core
     {
         ServerBuild BuildLinuxServer(string outDir, string executable);
 
-        void RevertToOriginalBuildTarget();
+        void WarnBuildTargetChanged();
     }
 }

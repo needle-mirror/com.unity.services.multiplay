@@ -73,21 +73,13 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Builds
             return new ServerBuild(path);
         }
 
-        public void RevertToOriginalBuildTarget()
+        public void WarnBuildTargetChanged()
         {
-            if (m_OriginalBuildTargetUndefined)
+            if (m_OriginalTarget != EditorUserBuildSettings.activeBuildTarget
+                || m_OriginalSubtarget != EditorUserBuildSettings.standaloneBuildSubtarget
+                || m_OriginalTargetGroup != EditorUserBuildSettings.selectedBuildTargetGroup)
             {
-                throw new InvalidOperationException("You cannot revert to an original build target without first initiating a build!");
-            }
-
-            if (EditorUserBuildSettings.SwitchActiveBuildTargetAsync(m_OriginalTargetGroup, m_OriginalTarget))
-            {
-                Logger.LogVerbose($"Switched back to originalTargetGroup[{m_OriginalTargetGroup}] originalTarget[{m_OriginalTarget}]");
-                EditorUserBuildSettings.standaloneBuildSubtarget = m_OriginalSubtarget;
-            }
-            else
-            {
-                Logger.LogVerbose($"Switching build target to originalTargetGroup[{m_OriginalTargetGroup}] originalTarget[{m_OriginalTarget}] failed!");
+                Logger.LogWarning("Build target was changed for the build process.");
             }
 
             m_OriginalBuildTargetUndefined = true;

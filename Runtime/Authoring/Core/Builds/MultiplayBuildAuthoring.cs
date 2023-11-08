@@ -29,9 +29,9 @@ namespace Unity.Services.Multiplay.Authoring.Core
             return serverBuild.Path;
         }
 
-        public void RevertToOriginalBuildTarget()
+        public void WarnBuildTargetChanged()
         {
-            m_BinaryBuilder.RevertToOriginalBuildTarget();
+            m_BinaryBuilder.WarnBuildTargetChanged();
         }
 
         public void CleanBuilds()

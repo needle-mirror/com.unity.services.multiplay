@@ -42,7 +42,8 @@ namespace Unity.Services.Multiplay.Authoring.Core.Assets
         public enum Query
         {
             Sqp,
-            A2s
+            A2s,
+            None
         }
     }
 }

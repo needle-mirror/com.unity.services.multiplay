@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Multiplay.Authoring.Core.Assets;
 using Unity.Services.Multiplay.Authoring.Core.Builds;
-using Unity.Services.Multiplay.Authoring.Core.Model;
 
 namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
@@ -49,25 +48,6 @@ namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 
             onProgress?.Invoke(100f);
             return true;
-        }
-
-        public interface ITaskDelay
-        {
-            Task Delay(int millisecondsDelay, CancellationToken cancellationToken = default);
-            Task Delay(TimeSpan timeSpan, CancellationToken cancellationToken = default);
-        }
-
-        public class DefaultTaskDelay : ITaskDelay
-        {
-            public Task Delay(int millisecondsDelay, CancellationToken cancellationToken = default)
-            {
-                return Task.Delay(millisecondsDelay, cancellationToken);
-            }
-
-            public Task Delay(TimeSpan timeSpan, CancellationToken cancellationToken = default)
-            {
-                return Task.Delay(timeSpan, cancellationToken);
-            }
         }
     }
 }
