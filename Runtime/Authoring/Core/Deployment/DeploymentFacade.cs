@@ -7,6 +7,7 @@ using Unity.Services.DeploymentApi.Editor;
 using Unity.Services.Multiplay.Authoring.Core.Assets;
 using Unity.Services.Multiplay.Authoring.Core.Builds;
 using Unity.Services.Multiplay.Authoring.Core.Exceptions;
+using Unity.Services.Multiplay.Authoring.Core.Logging;
 using Unity.Services.Multiplay.Authoring.Core.Model;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Core.Threading;

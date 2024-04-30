@@ -27,14 +27,8 @@ using IAccessTokens = Unity.Services.Core.Editor.IAccessTokens;
 
 namespace Unity.Services.Multiplay.Authoring.Editor
 {
-    /// <summary>
-    /// Provides access to the different services used for the Admin APIs and Deployment capabilities
-    /// </summary>
-    public static class MultiplayAuthoringServices
+    static class MultiplayAuthoringServices
     {
-        /// <summary>
-        /// The service provider
-        /// </summary>
         public static IScopedServiceProvider Provider { get; }
 
         static MultiplayAuthoringServices()
@@ -104,10 +98,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor
             collection.RegisterStartupSingleton(Default<FleetStatusTracker>);
         }
 
-        /// <summary>
-        /// Get the service specified by the type T
-        /// </summary>
-        public static T GetService<T>(this IServiceProvider provider)
+        internal static T GetService<T>(this IServiceProvider provider)
         {
             return (T)provider.GetService(typeof(T));
         }

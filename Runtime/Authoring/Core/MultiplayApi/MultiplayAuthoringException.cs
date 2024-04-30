@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Unity.Services.Multiplay.Authoring.Core
 {

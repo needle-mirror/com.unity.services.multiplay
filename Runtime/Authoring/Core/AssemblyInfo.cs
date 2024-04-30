@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Services.Cli.GameServerHosting.UnitTest")]
 [assembly: InternalsVisibleTo("InternalsVisible.DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
+[assembly: InternalsVisibleTo("Unity.DedicatedServer.DeploymentOrchestrator.Editor")]
 [assembly: InternalsVisibleTo("Unity.Services.Cli.Matchmaker")]
 [assembly: InternalsVisibleTo("Unity.Services.Cli.Matchmaker.UnitTest")]
 

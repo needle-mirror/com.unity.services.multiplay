@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Unity.Services.Multiplay.Authoring.Core.Builds
 {

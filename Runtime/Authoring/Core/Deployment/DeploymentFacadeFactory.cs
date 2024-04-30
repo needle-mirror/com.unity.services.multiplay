@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Unity.Services.Multiplay.Authoring.Core.Builds;
+using Unity.Services.Multiplay.Authoring.Core.Logging;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Core.Threading;
 using ILogger = Unity.Services.Multiplay.Authoring.Core.Logging.ILogger;

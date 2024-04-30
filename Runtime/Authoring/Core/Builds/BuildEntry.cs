@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Unity.Services.Multiplay.Authoring.Core.Builds

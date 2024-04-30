@@ -1,6 +1,8 @@
+using System;
+
 namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
-    public enum ServerAction
+    enum ServerAction
     {
         Add = 1,
         Delete = 2,
