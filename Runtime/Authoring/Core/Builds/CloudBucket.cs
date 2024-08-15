@@ -2,11 +2,17 @@ using System;
 
 namespace Unity.Services.Multiplay.Authoring.Core.Builds
 {
-    struct CloudBucketId
+    /// <summary>
+    /// Represents the identifier of the CCD bucket where direct file upload is stored
+    /// </summary>
+    public struct CloudBucketId
     {
-        public Guid Id { private get; init; }
+        /// <summary>
+        /// ID of the cloud bucket
+        /// </summary>
+        public Guid Guid { get; init; }
 
-        public Guid ToGuid() => Id;
-        public override string ToString() => Id.ToString();
+        /// <inheritdoc />
+        public override string ToString() => Guid.ToString();
     }
 }

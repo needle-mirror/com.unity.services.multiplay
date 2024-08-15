@@ -5,7 +5,7 @@ using Unity.Services.Multiplay.Authoring.Core.Builds;
 
 namespace Unity.Services.Multiplay.Authoring.Core.MultiplayApi
 {
-    interface IBuildsApi
+    interface IBuildsApi : IInitializable
     {
         Task<(BuildId, CloudBucketId)?> FindByName(string name, CancellationToken cancellationToken = default);
         Task<(BuildId, CloudBucketId)> Create(string name, MultiplayConfig.BuildDefinition definition, CancellationToken cancellationToken = default);

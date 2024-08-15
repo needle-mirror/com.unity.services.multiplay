@@ -7,7 +7,6 @@ using Unity.Services.DeploymentApi.Editor;
 using Unity.Services.Multiplay.Authoring.Core.Assets;
 using Unity.Services.Multiplay.Authoring.Core.Builds;
 using Unity.Services.Multiplay.Authoring.Core.Exceptions;
-using Unity.Services.Multiplay.Authoring.Core.Logging;
 using Unity.Services.Multiplay.Authoring.Core.Model;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Core.Threading;
@@ -101,11 +100,20 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
             return new BuildUploadResult(buildItem, buildId, bucketId, changes);
         }
 
-        public async Task<bool> SyncBuildAsync(BuildItem build, BuildId buildId, CloudBucketId bucketId, CancellationToken cancellationToken = default)
+        public async Task<bool> SyncBuildAsync(
+            bool createNewVersion,
+            BuildItem build,
+            BuildId buildId,
+            CloudBucketId bucketId,
+            CancellationToken cancellationToken = default)
         {
-            m_Logger.LogVerbose($"[{nameof(DeploymentFacade)}] Creating Build Version...");
-            build.SetStatusDescription("Creating Version");
-            await m_BuildsApi.CreateVersion(buildId, bucketId, cancellationToken);
+            if (createNewVersion)
+            {
+                m_Logger.LogVerbose($"[{nameof(DeploymentFacade)}] Creating Build Version...");
+                build.SetStatusDescription("Creating Version");
+                await m_BuildsApi.CreateVersion(buildId, bucketId, cancellationToken);
+            }
+
             build.Progress += 16f;
 
             m_Logger.LogVerbose($"[{nameof(DeploymentFacade)}] Syncing Build...");
@@ -183,10 +191,44 @@ namespace Unity.Services.Multiplay.Authoring.Core.Deployment
                 throw new ArgumentException($"Fleet {fleetName.ToString()} not found");
             }
             var buildConfigurationId = await FindBuildConfigAsync(buildConfigurationName, cancellationToken);
-            var allocationResult = await m_AllocationApi.CreateTestAllocation(fleetInfo.Id, fleetInfo.Regions.First().RegionId, buildConfigurationId.ToLong(), cancellationToken);
+            var allocationResult = await m_AllocationApi.CreateTestAllocation(fleetInfo.Id, fleetInfo.Regions.First().RegionId, buildConfigurationId.Id, cancellationToken);
 
             var allocationInformation = await m_AllocationApi.WaitForAllocation(fleetInfo.Id, allocationResult.AllocationId, cancellationToken);
             return allocationInformation;
+        }
+
+        public Task<List<AllocationInformation>> ListTestAllocations(FleetId fleetId, CancellationToken cancellationToken = default)
+        {
+            return m_AllocationApi.ListTestAllocations(fleetId, cancellationToken);
+        }
+
+        public Task RemoveTestAllocation(FleetId fleetId, Guid allocationId, CancellationToken token)
+        {
+            return m_AllocationApi.RemoveTestAllocation(fleetId, allocationId, token);
+        }
+
+        public Task<Dictionary<string, Guid>> GetAvailableRegions()
+        {
+            return m_FleetApi.GetRegions();
+        }
+
+        public Task<IReadOnlyList<FleetInfo>> GetFleets()
+        {
+            return m_FleetApi.List();
+        }
+
+        public Task DeleteFleet(FleetId fleetId)
+        {
+            return m_FleetApi.DeleteFleet(fleetId);
+        }
+
+        public async Task InitAsync()
+        {
+            await m_CloudStorage.InitAsync();
+            await m_BuildsApi.InitAsync();
+            await m_ConfigApi.InitAsync();
+            await m_FleetApi.InitAsync();
+            await m_AllocationApi.InitAsync();
         }
     }
 }

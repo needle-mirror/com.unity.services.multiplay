@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2024-08-15
+* Added API to interact with Admin API
+* Added API to interact with deployment capabilities
+* Made upload more robust in some cases of partial success
+* Fix issue where gsh deploy upload may fail in some cases
+  * A partial upload would not be retried and a subsequent build version would fail to be created
+* Fix with the upload command. It would not wait for sync if there was nothing to do. 
+
 ## [1.2.2] - 2024-04-30
 * Updated content of apple privacy manifest
 

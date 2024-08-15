@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.Multiplay.Authoring.Core;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Servers.Servers;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.Servers.Apis.Servers;
@@ -15,12 +14,25 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
     class ServersApi : IServersApi
     {
         readonly IServersApiClient m_Client;
-        readonly IMultiplayApiConfig m_ApiConfig;
+        readonly IApiAuthenticator m_ApiInit;
+        IMultiplayApiConfig m_ApiConfig;
 
-        public ServersApi(IMultiplayApiConfig apiConfig, IServersApiClient client)
+        public ServersApi(IServersApiClient client, IApiAuthenticator apiInit)
         {
-            m_ApiConfig = apiConfig;
             m_Client = client;
+            m_ApiInit = apiInit;
+            m_ApiConfig = ApiConfig.Empty;
+        }
+
+        public async Task InitAsync()
+        {
+            var(config, basePath, headers) = await m_ApiInit.Authenticate();
+            ((ServersApiClient)m_Client).Configuration = new AdminApis.Servers.Configuration(
+                basePath,
+                null,
+                null,
+                headers);
+            m_ApiConfig = config;
         }
 
         public async Task<bool> TriggerServerActionAsync(long serverId, ServerAction action, CancellationToken cancellationToken = default)

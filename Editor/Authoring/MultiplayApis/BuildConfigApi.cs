@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.Multiplay.Authoring.Core;
 using Unity.Services.Multiplay.Authoring.Core.Assets;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
 using Unity.Services.Multiplay.Authoring.Editor.AdminApis.BuildConfigs.Apis.BuildConfigurations;
@@ -13,13 +12,26 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 {
     class BuildConfigApi : IBuildConfigApi
     {
-        readonly IMultiplayApiConfig m_ApiConfig;
+        IMultiplayApiConfig m_ApiConfig;
         readonly IBuildConfigurationsApiClient m_Client;
+        readonly IApiAuthenticator m_ApiInit;
 
-        public BuildConfigApi(IMultiplayApiConfig apiConfig, IBuildConfigurationsApiClient client)
+        public BuildConfigApi(IBuildConfigurationsApiClient client, IApiAuthenticator apiInit)
         {
-            m_ApiConfig = apiConfig;
             m_Client = client;
+            m_ApiInit = apiInit;
+            m_ApiConfig = ApiConfig.Empty;
+        }
+
+        public async Task InitAsync()
+        {
+            var(config, basePath, headers) = await m_ApiInit.Authenticate();
+            ((BuildConfigurationsApiClient)m_Client).Configuration = new AdminApis.BuildConfigs.Configuration(
+                basePath,
+                null,
+                null,
+                headers);
+            m_ApiConfig = config;
         }
 
         public async Task<BuildConfigurationId?> FindByName(string name, CancellationToken cancellationToken = default)
@@ -42,7 +54,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var request = new CreateBuildConfigurationRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId,
                 new BuildConfigurationCreateRequest(
                     name,
-                    buildId.ToLong(),
+                    buildId.Id,
                     definition.QueryType.ToString().ToLower(),
                     definition.BinaryPath,
                     definition.CommandLine,
@@ -63,10 +75,10 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var request = new UpdateBuildConfigurationRequest(
                 m_ApiConfig.ProjectId,
                 m_ApiConfig.EnvironmentId,
-                id.ToLong(),
+                id.Id,
                 new BuildConfigurationUpdateRequest(
                     name,
-                    buildId.ToLong(),
+                    buildId.Id,
                     definition.Variables.Select(kv => new ConfigurationPair1(0, kv.Key, kv.Value)).ToList(),
                     definition.QueryType.ToString().ToLower(),
                     definition.BinaryPath,
@@ -101,7 +113,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             }
         }
 
-        private async Task<AdminApis.BuildConfigs.Response<TResponse>> TryCatchRequestAsync<TRequest, TResponse>(TRequest request, Func<TRequest, Task<AdminApis.BuildConfigs.Response<TResponse>>> func)
+        async Task<AdminApis.BuildConfigs.Response<TResponse>> TryCatchRequestAsync<TRequest, TResponse>(TRequest request, Func<TRequest, Task<AdminApis.BuildConfigs.Response<TResponse>>> func)
         {
             AdminApis.BuildConfigs.Response<TResponse> response;
             try

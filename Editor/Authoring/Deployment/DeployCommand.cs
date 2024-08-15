@@ -35,7 +35,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Deployment
             try
             {
                 using var scope = Provider.CreateScope();
-                var deployer = scope.GetService<MultiplayDeployer>();
+                var deployer = scope.GetService<IMultiplayDeployer>();
 
                 await deployer.InitAsync();
                 await deployer.Deploy(deploymentItems, cancellationToken);

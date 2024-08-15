@@ -40,13 +40,13 @@ namespace Unity.Services.Multiplay.Models
         }
 
         /// <summary>
-        /// 
+        /// Gets the key in the key/value pair.
         /// </summary>
         [Preserve]
         [DataMember(Name = "key", IsRequired = true, EmitDefaultValue = true)]
         public string Key{ get; }
         /// <summary>
-        /// 
+        /// Gets the value in the key/value pair.
         /// </summary>
         [Preserve]
         [DataMember(Name = "value", IsRequired = true, EmitDefaultValue = true)]

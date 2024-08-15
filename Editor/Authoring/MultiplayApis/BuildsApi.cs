@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.Multiplay.Authoring.Core;
 using Unity.Services.Multiplay.Authoring.Core.Assets;
 using Unity.Services.Multiplay.Authoring.Core.Builds;
 using Unity.Services.Multiplay.Authoring.Core.MultiplayApi;
@@ -16,13 +15,26 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 {
     class BuildsApi : IBuildsApi
     {
-        readonly IMultiplayApiConfig m_ApiConfig;
+        IMultiplayApiConfig m_ApiConfig;
         readonly IBuildsApiClient m_Client;
+        readonly IApiAuthenticator m_ApiInit;
 
-        public BuildsApi(IMultiplayApiConfig apiConfig, IBuildsApiClient client)
+        public BuildsApi(IBuildsApiClient client, IApiAuthenticator apiInit)
         {
-            m_ApiConfig = apiConfig;
             m_Client = client;
+            m_ApiInit = apiInit;
+            m_ApiConfig = ApiConfig.Empty;
+        }
+
+        public async Task InitAsync()
+        {
+            var(config, basePath, headers) = await m_ApiInit.Authenticate();
+            ((BuildsApiClient)m_Client).Configuration = new AdminApis.Builds.Configuration(
+                basePath,
+                null,
+                null,
+                headers);
+            m_ApiConfig = config;
         }
 
         public async Task<(BuildId, CloudBucketId)?> FindByName(string name, CancellationToken cancellationToken = default)
@@ -39,7 +51,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
                 return null;
 
             return (new BuildId {Id = result.BuildID },
-                new CloudBucketId {Id = result.Ccd?.BucketID ?? Guid.Empty });
+                new CloudBucketId {Guid = result.Ccd?.BucketID ?? Guid.Empty });
         }
 
         public async Task<(BuildId, CloudBucketId)> Create(string name, MultiplayConfig.BuildDefinition definition, CancellationToken cancellationToken = default)
@@ -56,7 +68,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             });
             return (
                 new BuildId { Id = response.Result.BuildID },
-                new CloudBucketId { Id = response.Result.Ccd?.BucketID ?? Guid.Empty }
+                new CloudBucketId { Guid = response.Result.Ccd?.BucketID ?? Guid.Empty }
             );
         }
 
@@ -65,9 +77,9 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
             var request = new CreateNewBuildVersionRequest(
                 m_ApiConfig.ProjectId,
                 m_ApiConfig.EnvironmentId,
-                id.ToLong(),
+                id.Id,
                 new Unity.Services.Multiplay.Authoring.Editor.AdminApis.Builds.Models.CreateNewBuildVersionRequest(
-                    new CCDDetails2(bucket.ToGuid())
+                    new CCDDetails2(bucket.Guid)
                 )
             );
             await TryCatchRequestAsync(request, async(req) => {
@@ -77,7 +89,10 @@ namespace Unity.Services.Multiplay.Authoring.Editor.MultiplayApis
 
         public async Task<bool> IsSynced(BuildId id, CancellationToken cancellationToken = default)
         {
-            var request = new GetBuildRequest(m_ApiConfig.ProjectId, m_ApiConfig.EnvironmentId, id.ToLong());
+            var request = new GetBuildRequest(
+                m_ApiConfig.ProjectId,
+                m_ApiConfig.EnvironmentId,
+                id.Id);
             var response = await TryCatchRequestAsync(request, async(req) => {
                 return await m_Client.GetBuildAsync(req);
             });

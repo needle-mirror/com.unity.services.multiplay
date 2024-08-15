@@ -44,7 +44,7 @@ namespace Unity.Services.Multiplay
         /// <summary>
         /// Subscribes to the SDK Daemon and provides updates via callbacks.
         /// </summary>
-        /// <param name="callbacks"></param>
+        /// <param name="callbacks">The callbacks to pass the updates to</param>
         /// <returns>A task returning a handle for server event management.</returns>
         Task<IServerEvents> SubscribeToServerEventsAsync(MultiplayEventCallbacks callbacks);
 

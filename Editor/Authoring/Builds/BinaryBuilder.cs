@@ -79,7 +79,8 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Builds
                 || m_OriginalSubtarget != EditorUserBuildSettings.standaloneBuildSubtarget
                 || m_OriginalTargetGroup != EditorUserBuildSettings.selectedBuildTargetGroup)
             {
-                Logger.LogWarning("Build target was changed for the build process.");
+                Logger.LogWarning("Build target was changed for the build process. " +
+                    "You may need to switch targets to continue other work.");
             }
 
             m_OriginalBuildTargetUndefined = true;
