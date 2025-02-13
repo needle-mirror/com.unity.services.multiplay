@@ -1,3 +1,3 @@
-* [Multiplay](index)
+* [Multiplay Hosting](index)
 * [Author In Unity](Authoring/index)
-  * [Multiplay Assets](Authoring/multiplay-assets)
+  * [Multiplay Hosting Assets](Authoring/multiplay-assets)

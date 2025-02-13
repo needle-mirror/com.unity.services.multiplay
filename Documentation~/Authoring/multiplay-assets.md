@@ -1,21 +1,21 @@
-# Multiplay assets
+# Multiplay Hosting assets
 
 ## Creation
-Right-click in the `Project Window` then select `Create > Multiplay Config` to create a Multiplay config file.
+Right-click in the `Project Window` then select `Create > Services > Multiplay Config` to create a Multiplay Hosting config file.
 
-### Multiplay Config file
+### Multiplay Hosting Config file
 
-The Multiplay Config file is a YAML consisting of three collections:
+The Multiplay Hosting Config file is a YAML consisting of three collections:
 * Builds
 * Build Configurations
 * Fleets
 
 More details on each collection will be elaborated on below.
-By default, the file is setup to run a single multiplayer server without
+By default, the file is setup to run a single Multiplay Hosting server without
 any scaling settings.
 
 ### Builds
-Builds constitute the binary to be uploaded to Game Server Hosting of the game.  
+Builds constitute the binary to be uploaded to Multiplay Hosting of the game.  
 
 The name will be the name used to be displayed in the dashboard as well as other parts
 of the pipeline.

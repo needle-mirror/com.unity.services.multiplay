@@ -1,7 +1,7 @@
-# Multiplay Authoring
-This module allows users to author, modify, and deploy Multiplay assets directly from the Unity Editor.
+# Multiplay Hosting Authoring
+This module allows users to author, modify, and deploy Multiplay Hosting assets directly from the Unity Editor.
 
-> NOTE: Multiplay Authoring is only supported on Unity 2021.3 and above.
+> NOTE: Multiplay Hosting Authoring is only supported on Unity 2021.3 and above.
 
 ### Deployment Window
 The Deployment Window is a core feature of the Deployment package.
@@ -13,9 +13,9 @@ The Deployment Window provides a uniform deployment interface for all services. 
 
 For more information, consult the [com.unity.services.deployment](https://docs.unity3d.com/Packages/com.unity.services.deployment@latest) package documentation.
 
-### Create Multiplay Assets
-Right-click in the Project Window then select `Create > Services > Multiplay Config` to create a Multiplay config file.
+### Create Multiplay Hosting Assets
+Right-click in the Project Window then select `Create > Services > Multiplay Config` to create a Multiplay Hosting config file.
 
 The Deployment Window automatically detects these files to be deployed at a later time.
 
-For more information on how to create and modify Multiplay Assets, please see the [Multiplay assets](./multiplay-assets.md) documentation.
+For more information on how to create and modify Multiplay Hosting Assets, please see the [Multiplay Hosting assets](./multiplay-assets.md) documentation.
