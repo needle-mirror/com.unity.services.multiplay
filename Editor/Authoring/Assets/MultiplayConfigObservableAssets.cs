@@ -8,7 +8,7 @@ namespace Unity.Services.Multiplay.Authoring.Editor.Assets
         readonly IAssetAnalytics m_AssetAnalytics;
 
         public MultiplayConfigObservableAssets(IAssetAnalytics assetAnalytics)
-            : base(new AssetPostprocessorProxy(), false)
+            : base(new [] { MultiplayConfigResource.FileExtension }, new AssetPostprocessorProxy(), false)
         {
             m_AssetAnalytics = assetAnalytics;
             LoadAllAssets();
